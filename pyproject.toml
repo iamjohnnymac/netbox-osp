@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-osp"
-version = "0.1.1"
+version = "0.2.0.dev0"
 description = "Outside-plant fibre management for NetBox — cables, splice closures, fibre links with loss budgets, and an offline-capable Leaflet plant map."
 authors = [{ name = "John McKean", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
 maintainers = [{ name = "John McKean", email = "33052970+iamjohnnymac@users.noreply.github.com" }]

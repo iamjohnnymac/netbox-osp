@@ -1,5 +1,6 @@
 from django import forms
 
+from dcim.models import Manufacturer
 from netbox.forms import NetBoxModelBulkEditForm
 from tenancy.models import Tenant
 from utilities.forms.fields import DynamicModelChoiceField
@@ -13,9 +14,11 @@ from ..choices import (
     SpliceTypeChoices,
     StrandStatusChoices,
     TIA598ColorChoices,
+    TrunkTypeChoices,
 )
 from ..models import (
     FibreLink,
+    FibreTrunk,
     LocationGeo,
     OspCable,
     Splice,
@@ -89,3 +92,14 @@ class LocationGeoBulkEditForm(NetBoxModelBulkEditForm):
 
     model = LocationGeo
     nullable_fields = ("description", "elevation_m")
+
+
+class FibreTrunkBulkEditForm(NetBoxModelBulkEditForm):
+    trunk_type = forms.ChoiceField(choices=TrunkTypeChoices, required=False)
+    status = forms.ChoiceField(choices=OspStatusChoices, required=False)
+    tenant = DynamicModelChoiceField(queryset=Tenant.objects.all(), required=False)
+    manufacturer = DynamicModelChoiceField(queryset=Manufacturer.objects.all(), required=False)
+    show_on_map = forms.NullBooleanField(required=False)
+
+    model = FibreTrunk
+    nullable_fields = ("tenant", "manufacturer", "length_m", "description")

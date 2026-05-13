@@ -94,6 +94,9 @@ jobs:
               "caching": {"HOST": "localhost", "PORT": 6379, "DATABASE": 1, "SSL": False},
           }
           SECRET_KEY = "ci-only-do-not-use-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          # API_TOKEN_PEPPERS is required by NetBox 4.6 to hash v2 API tokens.
+          # Dict keyed by pepper id, value is the bytes. CI placeholder only.
+          API_TOKEN_PEPPERS = {1: "ci-only-pepper-do-not-reuse-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
           PLUGINS = ["netbox_osp"]
           PLUGINS_CONFIG = {"netbox_osp": {}}
           EOF

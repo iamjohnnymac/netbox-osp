@@ -11,9 +11,11 @@ from .choices import (
     StrandStatusChoices,
     ClosureTypeChoices,
     SpliceTypeChoices,
+    TrunkTypeChoices,
 )
 from .models import (
     FibreLink,
+    FibreTrunk,
     LocationGeo,
     OspCable,
     Splice,
@@ -172,5 +174,25 @@ class LocationGeoFilterSet(NetBoxModelFilterSet):
             return queryset
         return queryset.filter(
             Q(location__name__icontains=value)
+            | Q(description__icontains=value)
+        )
+
+
+class FibreTrunkFilterSet(NetBoxModelFilterSet):
+    trunk_type = django_filters.MultipleChoiceFilter(choices=TrunkTypeChoices)
+    status = django_filters.MultipleChoiceFilter(choices=OspStatusChoices)
+
+    class Meta:
+        model = FibreTrunk
+        fields = (
+            "id", "cid", "trunk_type", "status", "fibre_count",
+            "tenant", "manufacturer", "show_on_map",
+        )
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(cid__icontains=value)
             | Q(description__icontains=value)
         )

@@ -13,9 +13,11 @@ from ..choices import (
     OspStatusChoices,
     SpliceTypeChoices,
     StrandStatusChoices,
+    TrunkTypeChoices,
 )
 from ..models import (
-    FibreLink, LocationGeo, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
+    FibreLink, FibreTrunk, LocationGeo, OspCable, Splice, SpliceClosure,
+    SpliceTray, Strand, Tube,
 )
 
 
@@ -68,3 +70,10 @@ class LocationGeoFilterForm(NetBoxModelFilterSetForm):
     site_id = DynamicModelMultipleChoiceField(queryset=Site.objects.all(), required=False, label="Site")
     marker_color = forms.MultipleChoiceField(choices=LocationMarkerColorChoices, required=False)
     has_coords = forms.NullBooleanField(required=False, label="Has coords")
+
+
+class FibreTrunkFilterForm(NetBoxModelFilterSetForm):
+    model = FibreTrunk
+    trunk_type = forms.MultipleChoiceField(choices=TrunkTypeChoices, required=False)
+    status = forms.MultipleChoiceField(choices=OspStatusChoices, required=False)
+    tenant_id = DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, label="Tenant")

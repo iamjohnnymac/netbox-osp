@@ -25,6 +25,44 @@ class OspCableTypeChoices(ChoiceSet):
     ]
 
 
+class TrunkTypeChoices(ChoiceSet):
+    """Inter-rack / inter-building trunk bundle type.
+
+    Each value pairs with a default fibre_count surfaced by the admin form
+    via the DEFAULT_FIBRE_COUNT mapping below.
+    """
+
+    key = "FibreTrunk.trunk_type"
+
+    MPO_12 = "mpo-12"
+    MPO_24 = "mpo-24"
+    MPO_72 = "mpo-72"
+    RIBBON_144 = "ribbon-144"
+    LOOSE_TUBE_N = "loose-tube-n"
+    OTHER = "other"
+
+    CHOICES = [
+        (MPO_12, "MPO 12-fibre", "cyan"),
+        (MPO_24, "MPO 24-fibre", "blue"),
+        (MPO_72, "MPO 72-fibre", "indigo"),
+        (RIBBON_144, "Ribbon 144-fibre", "purple"),
+        (LOOSE_TUBE_N, "Loose-tube (N)", "teal"),
+        (OTHER, "Other", "gray"),
+    ]
+
+    # Default fibre_count per type, used by FibreTrunkForm to pre-fill the
+    # fibre_count field when the operator picks a trunk_type. None means
+    # "leave whatever the operator typed; we don't know."
+    DEFAULT_FIBRE_COUNT = {
+        MPO_12: 12,
+        MPO_24: 24,
+        MPO_72: 72,
+        RIBBON_144: 144,
+        LOOSE_TUBE_N: None,
+        OTHER: None,
+    }
+
+
 class OspStatusChoices(ChoiceSet):
     key = "OspCable.status"
 

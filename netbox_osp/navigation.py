@@ -36,6 +36,7 @@ link_buttons = (
     ),
 )
 locationgeo_buttons = _add_import_buttons("locationgeo")
+trunk_buttons = _add_import_buttons("fibretrunk")
 
 
 menu = PluginMenu(
@@ -68,6 +69,13 @@ menu = PluginMenu(
                 link="plugins:netbox_osp:strand_list",
                 link_text="Strands",
                 buttons=strand_buttons,
+            ),
+        )),
+        ("Trunks", (
+            PluginMenuItem(
+                link="plugins:netbox_osp:fibretrunk_list",
+                link_text="Fibre Trunks",
+                buttons=trunk_buttons,
             ),
         )),
         ("Splices", (

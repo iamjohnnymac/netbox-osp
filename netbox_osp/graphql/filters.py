@@ -101,3 +101,13 @@ class LocationGeoFilter(NetBoxModelFilter):
     marker_color: FilterLookup[str] | None = strawberry_django.filter_field()
     description: FilterLookup[str] | None = strawberry_django.filter_field()
     location_id: FilterLookup[int] | None = strawberry_django.filter_field()
+
+
+@strawberry_django.filter_type(models.FibreTrunk, lookups=True)
+class FibreTrunkFilter(PrimaryModelFilter):
+    cid: FilterLookup[str] | None = strawberry_django.filter_field()
+    trunk_type: FilterLookup[str] | None = strawberry_django.filter_field()
+    status: FilterLookup[str] | None = strawberry_django.filter_field()
+    fibre_count: FilterLookup[int] | None = strawberry_django.filter_field()
+    tenant_id: FilterLookup[int] | None = strawberry_django.filter_field()
+    manufacturer_id: FilterLookup[int] | None = strawberry_django.filter_field()

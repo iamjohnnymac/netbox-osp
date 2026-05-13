@@ -9,6 +9,28 @@ Per-release NetBox / Python compatibility lives on the
 
 ## Unreleased
 
+### Added
+
+- **`FibreTrunk` model** — parent for multi-fibre rack-to-rack physical
+  trunks (MPO/MTP 12/24/72-fibre, Ribbon 144-fibre, loose-tube indoor
+  runs). Carries `cid`, `trunk_type`, `fibre_count`, `manufacturer`,
+  `length_m`, `status` (reuses `OspStatusChoices`), GeoJSON `route` with
+  `show_on_map` opt-out, `description`, `comments`, `tenant`, `tags`.
+  DB-level `CheckConstraint` on `fibre_count > 0` plus a form-friendly
+  validation. New `TrunkTypeChoices` palette with a per-type
+  `DEFAULT_FIBRE_COUNT` mapping for follow-up auto-fill.
+- **REST CRUD** under `/api/plugins/osp/trunks/`.
+- **GraphQL** — `osp_fibre_trunk` and `osp_fibre_trunk_list` queries.
+- **Admin chrome** — list / add / edit / delete / bulk-edit /
+  bulk-delete / bulk-import / changelog views, table, filter form,
+  sidebar entry under a new "Trunks" group, search-index registration.
+- **Tests** — `tests/test_fibretrunk.py` covering `__str__`, defaults,
+  `clean()`, tagging, REST CRUD, and GraphQL module-level exposure.
+
+The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
+documents PR A; subsequent PRs (TrunkBreakout, MtpHarness, cassette
+device-type JSON, visual core tracer) append to this `Unreleased` block.
+
 ## 0.1.1 — 2026-05-13
 
 ### Fixed

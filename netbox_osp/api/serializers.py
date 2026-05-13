@@ -3,8 +3,8 @@ from rest_framework import serializers
 from netbox.api.serializers import NetBoxModelSerializer
 
 from ..models import (
-    FibreLink, FibreLinkStrand, LocationGeo, OspCable, Splice, SpliceClosure,
-    SpliceTray, Strand, Tube,
+    FibreLink, FibreLinkStrand, FibreTrunk, LocationGeo, OspCable, Splice,
+    SpliceClosure, SpliceTray, Strand, Tube,
 )
 from ..models._geo import validate_linestring, validate_point
 
@@ -124,6 +124,25 @@ class LocationGeoSerializer(NetBoxModelSerializer):
             "tags", "custom_fields", "created", "last_updated",
         )
         brief_fields = ("id", "url", "display", "location")
+
+
+class FibreTrunkSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_osp-api:fibretrunk-detail")
+
+    class Meta:
+        model = FibreTrunk
+        fields = (
+            "id", "url", "display", "cid", "trunk_type", "fibre_count",
+            "manufacturer", "length_m", "status", "route", "show_on_map",
+            "description", "comments", "tenant",
+            "tags", "custom_fields", "created", "last_updated",
+        )
+        brief_fields = ("id", "url", "display", "cid", "status")
+
+    def validate_route(self, value):
+        if value is not None:
+            validate_linestring(value)
+        return value
 
 
 class FibreLinkStrandSerializer(serializers.ModelSerializer):
