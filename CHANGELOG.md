@@ -9,6 +9,16 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-13
+
+### Fixed
+
+- Corrected author / maintainer name in package metadata, `PluginConfig`,
+  `mkdocs.yml` copyright, and the icon SVG copyright comment from
+  "John McKenzie" to "John McKean". 0.1.0 shipped with the wrong
+  spelling and PyPI does not permit re-uploading a published version,
+  so this metadata-only patch ships the correction.
+
 ## [0.1.0] — 2026-05-13
 
 First functional release. Covers the full OSP fibre data model, the
@@ -87,6 +97,7 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.1.0
 [0.0.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.0.1
