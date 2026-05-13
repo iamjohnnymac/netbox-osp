@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netbox-osp"
+version = "0.0.1"
+description = "Placeholder release — netbox-osp name reservation. Real v0.1.0 plugin coming soon."
+authors = [{ name = "John McKenzie", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+keywords = ["netbox", "netbox-plugin", "osp", "fibre", "fiber", "gis", "placeholder"]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Framework :: Django",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Homepage   = "https://github.com/iamjohnnymac/netbox-osp"
+Repository = "https://github.com/iamjohnnymac/netbox-osp"
+Issues     = "https://github.com/iamjohnnymac/netbox-osp/issues"
+
+[tool.setuptools.packages.find]
+include = ["netbox_osp*"]
