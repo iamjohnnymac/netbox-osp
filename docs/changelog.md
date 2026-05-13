@@ -26,10 +26,25 @@ Per-release NetBox / Python compatibility lives on the
   sidebar entry under a new "Trunks" group, search-index registration.
 - **Tests** — `tests/test_fibretrunk.py` covering `__str__`, defaults,
   `clean()`, tagging, REST CRUD, and GraphQL module-level exposure.
+- **`TrunkBreakout` through-table** bridging `FibreTrunk` to NetBox's
+  native `dcim.Cable`. Captures the trunk-with-breakouts pattern:
+  "24F MTP trunk → 12F breakout to rack A + 12F breakout to rack B" as
+  one entity. `trunk` FK (CASCADE), `cable` FK (PROTECT),
+  1-indexed `fibre_range_start` / `fibre_range_end`, two
+  `unique_together` to prevent double-allocation, and field-keyed
+  `clean()` rejecting overflow and sibling overlap.
+- **`FibreTrunk.clean()`** now enforces sum-of-children ≤ `fibre_count`.
+- **`FibreTrunk.fibres_used` / `fibres_remaining` / `fibres_utilization_pct`**
+  computed properties.
+- **"Import from cables" wizard** at
+  `/plugins/osp/trunks/<trunk_id>/import-cables/` — atomic multi-select
+  bind of unbound `dcim.Cable`s to fibre ranges.
+- **REST + GraphQL** for `TrunkBreakout`.
+- **CSV bulk import** keyed by `trunk_cid` + `cable_label`.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PR A; subsequent PRs (TrunkBreakout, MtpHarness, cassette
-device-type JSON, visual core tracer) append to this `Unreleased` block.
+documents PRs A and B; subsequent PRs (MtpHarness, cassette device-type
+JSON, visual core tracer) append to this `Unreleased` block.
 
 ## 0.1.1 — 2026-05-13
 

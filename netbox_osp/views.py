@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import View
@@ -545,6 +545,20 @@ class TrunkImportFromCablesView(LoginRequiredMixin, PermissionRequiredMixin, Vie
                         form.add_error(None, f"{field}: {e}")
             else:
                 form.add_error(None, "; ".join(exc.messages))
+            return render(request, self.template_name, {
+                "trunk": trunk,
+                "form": form,
+            })
+        except IntegrityError as exc:
+            # Race condition: another operator bound the same cable or
+            # fibre_range_start to this trunk between our clean() and our
+            # save(). unique_together at DB layer kicks in. Atomic block
+            # rolled back; surface as a friendly form error.
+            form.add_error(
+                None,
+                "Another operator just attached one of these cables to this "
+                "trunk. Reload and try again."
+            )
             return render(request, self.template_name, {
                 "trunk": trunk,
                 "form": form,

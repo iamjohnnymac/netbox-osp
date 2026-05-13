@@ -7,20 +7,25 @@ prior and is exercised indirectly by test_models.py.)
 """
 from utilities.testing import TestCase
 
+from dcim.models import Cable
+
 from netbox_osp.forms import (
     LocationGeoImportForm,
     SpliceClosureImportForm,
     SpliceImportForm,
     SpliceTrayImportForm,
     StrandImportForm,
+    TrunkBreakoutImportForm,
     TubeImportForm,
 )
 from netbox_osp.models import (
+    FibreTrunk,
     LocationGeo,
     Splice,
     SpliceClosure,
     SpliceTray,
     Strand,
+    TrunkBreakout,
     Tube,
 )
 from netbox_osp.tests.test_models import _make_cable, _make_site
@@ -231,3 +236,103 @@ class SpliceImportTests(TestCase):
         })
         self.assertFalse(form.is_valid())
         self.assertIn("position", form.errors)
+
+
+class TrunkBreakoutImportTests(TestCase):
+    """CSV bulk-import for TrunkBreakout.
+
+    Form is trunk_cid + cable_label + fibre_range_start/end. Cable.label is
+    NOT globally unique in NetBox core; the form's clean() surfaces a clear
+    error on missing/ambiguous labels and re-runs the model clean() so
+    overlap / overflow rules apply on import too.
+    """
+
+    def _bootstrap(self, cid_tail, fibre_count=24):
+        trunk = FibreTrunk.objects.create(
+            cid=f"IMP-TRK-{cid_tail}",
+            trunk_type="mpo-24",
+            fibre_count=fibre_count,
+        )
+        # Two ordinary dcim.Cables to attach. label is the import key.
+        c1 = Cable.objects.create(label=f"CBL-{cid_tail}-A", type="smf")
+        c2 = Cable.objects.create(label=f"CBL-{cid_tail}-B", type="smf")
+        return trunk, c1, c2
+
+    def test_happy_path(self):
+        trunk, c1, c2 = self._bootstrap("HP")
+        form = TrunkBreakoutImportForm(data={
+            "trunk": trunk.cid,
+            "cable": c1.label,
+            "fibre_range_start": 1,
+            "fibre_range_end": 12,
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        self.assertEqual(TrunkBreakout.objects.filter(trunk=trunk).count(), 1)
+
+    def test_rejects_missing_trunk(self):
+        form = TrunkBreakoutImportForm(data={
+            "trunk": "DOES-NOT-EXIST",
+            "cable": "anything",
+            "fibre_range_start": 1,
+            "fibre_range_end": 12,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("trunk", form.errors)
+
+    def test_rejects_missing_cable_label(self):
+        trunk, _c1, _c2 = self._bootstrap("MISS")
+        form = TrunkBreakoutImportForm(data={
+            "trunk": trunk.cid,
+            "cable": "NOT-A-REAL-LABEL",
+            "fibre_range_start": 1,
+            "fibre_range_end": 12,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("cable", form.errors)
+
+    def test_rejects_ambiguous_cable_label(self):
+        trunk, _c1, _c2 = self._bootstrap("AMB")
+        # Two cables with the same label
+        Cable.objects.create(label="DUPE-LABEL", type="smf")
+        Cable.objects.create(label="DUPE-LABEL", type="smf")
+        form = TrunkBreakoutImportForm(data={
+            "trunk": trunk.cid,
+            "cable": "DUPE-LABEL",
+            "fibre_range_start": 1,
+            "fibre_range_end": 12,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("cable", form.errors)
+        self.assertIn("matches", str(form.errors["cable"]))
+
+    def test_rejects_range_exceeds_parent_fibre_count(self):
+        trunk, c1, _c2 = self._bootstrap("OVER", fibre_count=12)
+        form = TrunkBreakoutImportForm(data={
+            "trunk": trunk.cid,
+            "cable": c1.label,
+            "fibre_range_start": 1,
+            "fibre_range_end": 24,   # trunk only has 12
+        })
+        self.assertFalse(form.is_valid())
+        # field-keyed error from re-run model clean()
+        self.assertTrue(
+            "fibre_range_end" in form.errors or "__all__" in form.errors,
+            form.errors,
+        )
+
+    def test_rejects_sibling_range_overlap(self):
+        trunk, c1, c2 = self._bootstrap("OVR")
+        # Existing breakout claims fibres 1-12
+        TrunkBreakout.objects.create(
+            trunk=trunk, cable=c1,
+            fibre_range_start=1, fibre_range_end=12,
+        )
+        # New import attempts 6-18 (overlaps with 1-12)
+        form = TrunkBreakoutImportForm(data={
+            "trunk": trunk.cid,
+            "cable": c2.label,
+            "fibre_range_start": 6,
+            "fibre_range_end": 18,
+        })
+        self.assertFalse(form.is_valid())

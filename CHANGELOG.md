@@ -32,6 +32,43 @@ Per-release NetBox / Python compatibility lives in
 - **Tests** — `tests/test_fibretrunk.py` covering `__str__`, defaults,
   `clean()` (fibre_count guard and GeoJSON shape), tagging, REST CRUD
   with auth, and GraphQL module-level exposure.
+- **`TrunkBreakout` through-table** bridging `FibreTrunk` to NetBox's
+  native `dcim.Cable`. Captures the trunk-with-breakouts pattern:
+  operators express "24F MTP trunk → 12F breakout to rack A + 12F
+  breakout to rack B" as one cohesive entity with the trunk identity
+  preserved across child cables. Fields: `trunk` FK
+  (CASCADE), `cable` FK (PROTECT), `fibre_range_start` / `fibre_range_end`
+  (1-indexed `PositiveSmallIntegerField`), `description`, `tags`.
+  `CheckConstraint`s enforce `start >= 1` and `end >= start`; two
+  `unique_together` (`trunk, cable` and `trunk, fibre_range_start`)
+  catch double-allocation. `clean()` rejects ranges that exceed parent
+  `fibre_count` or overlap a sibling breakout — all field-keyed.
+- **`FibreTrunk.clean()`** now enforces sum of child-breakout ranges ≤
+  `fibre_count` (the PR-A `# TODO(PR-B)` marker is wired up).
+- **`FibreTrunk.fibres_used` / `fibres_remaining` / `fibres_utilization_pct`**
+  computed properties feed the admin table's utilisation column.
+- **"Import from cables" wizard** at
+  `/plugins/osp/trunks/<trunk_id>/import-cables/` — multi-select unbound
+  `dcim.Cable`s and assign fibre ranges atomically. All-or-nothing via
+  `transaction.atomic()`; surfaces both `ValidationError` and
+  `IntegrityError` race-loser collisions as form errors.
+- **REST + GraphQL** for `TrunkBreakout`: CRUD at
+  `/api/plugins/osp/trunk-breakouts/`, GraphQL `osp_trunk_breakout` and
+  `osp_trunk_breakout_list` queries via `FibreTrunkBreakoutType` /
+  `FibreTrunkBreakoutFilter`.
+- **Admin chrome for `TrunkBreakout`** — list / add / edit / delete /
+  bulk-edit / bulk-delete / bulk-import / changelog views, table with
+  parent-trunk + cable + range columns, filter form, "Trunk Breakouts"
+  sidebar entry under the existing Trunks group, search-index
+  registration.
+- **CSV bulk import** — `trunk_cid,cable_label,fibre_range_start,fibre_range_end`
+  with friendly errors on ambiguous / missing cable labels.
+- **Tests** — `tests/test_trunkbreakout.py` (31 cases) covering model
+  `clean()` field-keyed errors, `unique_together` enforcement,
+  `FibreTrunk` utilisation arithmetic, REST CRUD with auth, GraphQL
+  surface, and the import-cables wizard view (GET, POST happy path,
+  POST validation failure). Import-form tests added to
+  `tests/test_imports.py`.
 
 ### Notes for upcoming v0.2 PRs
 
