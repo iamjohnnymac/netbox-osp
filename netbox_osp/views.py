@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
-from django.core.signing import BadSignature, TimestampSigner
+from django.core.signing import BadSignature, dumps as signing_dumps, loads as signing_loads
 from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -585,7 +585,7 @@ class TrunkImportFromCablesView(LoginRequiredMixin, PermissionRequiredMixin, Vie
 # signer is used for both signing (after the validate step) and verifying
 # (on the confirm step). The salt is fixed per-view so tokens minted by
 # this view can't be replayed against another signed-state endpoint.
-_HARNESS_STATE_SIGNER = TimestampSigner(salt="netbox_osp.mtp_harness.preview")
+_HARNESS_STATE_SALT = "netbox_osp.mtp_harness.preview"
 
 
 def _free_rear_ports_for_device(device):
@@ -620,30 +620,34 @@ _HARNESS_STATE_MAX_AGE = 600
 
 
 def _sign_harness_state(payload: dict) -> str:
-    """Return a timestamped, signed JSON token of `payload`.
+    """Return a timestamped, signed, URL/HTML-safe token of `payload`.
 
-    Used to round-trip the cleaned form state between the preview and
-    confirm steps without trusting the operator's browser. The signer
-    derives from SECRET_KEY so any tampering is detectable.
+    Uses `django.core.signing.dumps` which serializes to JSON, signs with
+    SECRET_KEY, and base64-encodes the result. The base64 output is safe
+    to embed in HTML `value="..."` attributes without auto-escaping
+    corrupting the signature (which `TimestampSigner.sign` does NOT
+    guarantee — JSON's `"` chars get HTML-escaped, breaking unsign).
     """
-    raw = json.dumps(payload, default=str, sort_keys=True)
-    return _HARNESS_STATE_SIGNER.sign(raw)
+    # JSON serializer can't handle Decimal directly. Coerce to str at
+    # the caller boundary (already done in _serialise_state via the
+    # str() of Decimal values).
+    return signing_dumps(payload, salt=_HARNESS_STATE_SALT, compress=True)
 
 
 def _unsign_harness_state(token: str) -> dict | None:
     """Verify a previously-signed state token and return its payload.
 
-    Returns None on tampered / expired tokens. Callers should treat that
-    as "operator's preview state is stale; restart the form" rather than
-    a hard error.
+    Returns None on tampered / expired / corrupted tokens. Callers
+    should treat that as "operator's preview state is stale; restart the
+    form" rather than a hard error.
     """
     try:
-        raw = _HARNESS_STATE_SIGNER.unsign(token, max_age=_HARNESS_STATE_MAX_AGE)
-    except BadSignature:
-        return None
-    try:
-        return json.loads(raw)
-    except (TypeError, ValueError):
+        return signing_loads(
+            token,
+            salt=_HARNESS_STATE_SALT,
+            max_age=_HARNESS_STATE_MAX_AGE,
+        )
+    except (BadSignature, ValueError, TypeError):
         return None
 
 
