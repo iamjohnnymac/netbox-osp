@@ -1,3 +1,8 @@
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from netbox.api.viewsets import NetBoxModelViewSet
 
 from .. import filtersets, models
@@ -67,3 +72,22 @@ class TrunkBreakoutViewSet(NetBoxModelViewSet):
     )
     serializer_class = serializers.TrunkBreakoutSerializer
     filterset_class = filtersets.TrunkBreakoutFilterSet
+
+
+class CoreTraceView(APIView):
+    """`GET /api/plugins/osp/cores/<strand_id>/trace/` — return the
+    end-to-end hop list for a strand. PR E of v0.2.0.
+
+    The response shape is documented in `netbox_osp.tracer.trace_strand`.
+    Auth required; falls back to DRF's IsAuthenticated default.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk: int):
+        from ..tracer import trace_strand
+
+        strand = get_object_or_404(
+            models.Strand.objects.select_related("cable", "tube"),
+            pk=pk,
+        )
+        return Response(trace_strand(strand))

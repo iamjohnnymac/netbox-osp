@@ -1,0 +1,22 @@
+{% comment %}
+PR E — "Trace this core" button injected via PluginTemplateExtension
+onto dcim.Interface / dcim.FrontPort detail pages, and embedded directly
+in the netbox-osp Strand detail template.
+
+Expects in context:
+    - trace_url : the absolute path to navigate to. The view at that
+                  URL resolves the underlying Strand and renders the
+                  full tracer page.
+{% endcomment %}
+<div class="card mt-2">
+  <div class="card-body py-2">
+    <a href="{{ trace_url }}" class="btn btn-sm btn-primary osp-trace-button"
+       title="Render an end-to-end fibre path graph from this point through every patch cord, cassette, splice, and OSP strand.">
+      <i class="mdi mdi-source-branch"></i>
+      Trace this core
+    </a>
+    <span class="text-muted small ms-2">
+      Visual graph of every hop from device interface to device interface.
+    </span>
+  </div>
+</div>

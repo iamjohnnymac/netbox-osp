@@ -1,0 +1,90 @@
+{% extends 'base/layout.html' %}
+{% load static %}
+
+{% comment %}
+PR E — full-page visual core tracer. The page bootstraps with the strand
+metadata; core_tracer.js fetches the JSON endpoint, renders the
+dagre-d3 graph, and updates the summary band on top.
+
+If dagre-d3 / d3 fail to load (offline install, vendoring swapped out),
+the JS surfaces a graceful fallback message inside #osp-tracer-fallback
+and renders the hop list as a plain table.
+{% endcomment %}
+
+{% block title %}Trace strand {{ strand }} - netbox-osp{% endblock %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+        <div>
+          <h2 class="mb-1">
+            <i class="mdi mdi-source-branch"></i>
+            Core trace
+          </h2>
+          <div class="text-muted">
+            <a href="{{ strand.get_absolute_url }}">{{ strand }}</a>
+            on cable <a href="{{ strand.cable.get_absolute_url }}">{{ strand.cable.cid }}</a>
+          </div>
+        </div>
+        <div>
+          <a href="{{ strand.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">
+            <i class="mdi mdi-arrow-left"></i> Back to strand
+          </a>
+        </div>
+      </div>
+
+      <div class="osp-tracer-summary" id="osp-tracer-summary">
+        <span class="osp-tracer-summary__metric">
+          <strong id="osp-tracer-summary-total">0.00</strong> /
+          <span id="osp-tracer-summary-target">0.00</span> dB used
+        </span>
+        <span class="osp-tracer-summary__metric">
+          (<span id="osp-tracer-summary-pct">0%</span>)
+        </span>
+        <span id="osp-tracer-summary-band" class="osp-tracer-summary__band">…</span>
+        <span id="osp-tracer-incomplete" class="osp-tracer-summary__incomplete">
+          Incomplete — strand has unbound terminations
+        </span>
+      </div>
+
+      <div class="card">
+        <h5 class="card-header">
+          <i class="mdi mdi-graph"></i> Path graph (click any hop to navigate)
+        </h5>
+        <div class="card-body osp-tracer-host">
+          <svg id="osp-tracer" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="osp-tracer-fallback" class="osp-tracer-fallback"></div>
+        </div>
+      </div>
+
+      <p class="text-muted small mt-2 mb-0">
+        Hop kinds: <span style="color:#0d6efd">interface</span> ·
+        <span style="color:#6c757d">cable</span> ·
+        <span style="color:#fd7e14">cassette</span> ·
+        <span style="color:#6f42c1">trunk</span> ·
+        <span style="color:#dc3545">splice</span> ·
+        <span style="color:#198754">osp strand</span>.
+        Per-hop loss is computed from cable attenuation × length, splice
+        loss, and per-cassette pass-through loss; configure the defaults
+        under <code>PLUGINS_CONFIG["netbox_osp"]</code>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Bootstrapped data for core_tracer.js. The JS fetches the JSON
+    // endpoint asynchronously so the page renders even if the trace
+    // computation takes a moment on large splice graphs.
+    window.OSP_TRACE_URL = "{{ trace_json_url }}";
+</script>
+<script src="{% static 'netbox_osp/js/dagre-d3.min.js' %}"></script>
+<script src="{% static 'netbox_osp/js/core_tracer.js' %}"></script>
+{% endblock %}

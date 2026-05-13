@@ -81,6 +81,7 @@ nav:
   - Install: install.md
   - Configure: configure.md
   - Data model: data-model.md
+  - Core tracer: core-tracer.md
   - Tile bundling: tile-bundling.md
   - Compatibility: compatibility.md
   - Changelog: changelog.md
