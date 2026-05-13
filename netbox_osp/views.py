@@ -668,7 +668,9 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
             if row and not row.get("DELETE")
         ]
         if not cleaned_rows:
-            dest_formset.add_error(None, "At least one destination row is required.")
+            dest_formset._non_form_errors = dest_formset.error_class(
+                ["At least one destination row is required."]
+            )
             return False
 
         ok = True
@@ -676,7 +678,9 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # 1. Duplicate destination racks.
         rack_pks = [row["dest_rack"].pk for row in cleaned_rows]
         if len(set(rack_pks)) != len(rack_pks):
-            dest_formset.add_error(None, "Each destination rack must be unique.")
+            dest_formset._non_form_errors = dest_formset.error_class(
+                ["Each destination rack must be unique."]
+            )
             ok = False
 
         # 2. Sum of fibre ranges <= trunk.fibre_count.
@@ -717,26 +721,23 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 ok = False
                 break
 
-        # 4. Source rear port not selected as a destination rear port.
-        source_rp = parent_form.cleaned_data.get("source_rear_port")
-        if source_rp is not None:
-            for row in cleaned_rows:
-                drp = row.get("dest_rear_port")
-                if drp is not None and drp.pk == source_rp.pk:
-                    # Locate the form in the formset
-                    for fidx, form in enumerate(dest_formset.forms):
-                        if (
-                            form.cleaned_data
-                            and form.cleaned_data.get("dest_rear_port")
-                            and form.cleaned_data["dest_rear_port"].pk == source_rp.pk
-                        ):
-                            dest_formset.forms[fidx].add_error(
-                                "dest_rear_port",
-                                "Destination port cannot be the same as the "
-                                "source rear port.",
-                            )
-                            break
-                    ok = False
+        # 4. Source device has enough free RearPorts for all destinations.
+        # Each destination consumes one source-side RearPort.
+        source_device = parent_form.cleaned_data.get("source_device")
+        if source_device is not None:
+            from dcim.models import RearPort
+            free_count = RearPort.objects.filter(
+                device=source_device,
+                cable__isnull=True,
+            ).count()
+            if free_count < len(cleaned_rows):
+                parent_form.add_error(
+                    "source_device",
+                    f"Source device has {free_count} free RearPort(s) but "
+                    f"the harness needs {len(cleaned_rows)}. Pick a device "
+                    "with more free ports, or remove destination rows.",
+                )
+                ok = False
 
         return ok
 
@@ -762,7 +763,6 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
             "manufacturer": _pk_or_none(parent.get("manufacturer")),
             "source_rack": _pk_or_none(parent.get("source_rack")),
             "source_device": _pk_or_none(parent.get("source_device")),
-            "source_rear_port": _pk_or_none(parent.get("source_rear_port")),
             "cassette_device_type": _pk_or_none(parent.get("cassette_device_type")),
             "cassette_device_role": _pk_or_none(parent.get("cassette_device_role")),
             "cable_type": parent["cable_type"],
@@ -834,7 +834,6 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
             "manufacturer": _fetch(Manufacturer, parent.get("manufacturer"), "Manufacturer"),
             "source_rack": _fetch(Rack, parent.get("source_rack"), "Source rack"),
             "source_device": _fetch(Device, parent.get("source_device"), "Source device"),
-            "source_rear_port": _fetch(RearPort, parent.get("source_rear_port"), "Source rear port"),
             "cassette_device_type": _fetch(
                 DeviceType, parent.get("cassette_device_type"), "Cassette device type",
             ),
@@ -915,7 +914,26 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # `dcim.choices`; the actual string value is "connected".
         cable_status_connected = "connected"
 
-        source_rp = parent_resolved["source_rear_port"]
+        # Auto-pick one free source-side RearPort per destination row,
+        # alphabetical by RearPort name. _validate_harness() has already
+        # confirmed there are enough free ports — but keep this guard so
+        # a race between preview and confirm fails cleanly.
+        from dcim.models import RearPort
+        source_device = parent_resolved["source_device"]
+        source_rps = list(
+            RearPort.objects.filter(
+                device=source_device,
+                cable__isnull=True,
+            ).order_by("name")[:len(rows_resolved)]
+        )
+        if len(source_rps) < len(rows_resolved):
+            raise ValidationError({
+                "source_device":
+                f"Source device has only {len(source_rps)} free RearPort(s) "
+                f"but {len(rows_resolved)} destinations were requested. "
+                "Another operator may have cabled one between preview and "
+                "confirm — reload and retry.",
+            })
 
         with transaction.atomic():
             # Step 1: parent FibreTrunk.
@@ -935,7 +953,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
             created_cables = []
             created_breakouts = []
 
-            for row in rows_resolved:
+            for row, source_rp in zip(rows_resolved, source_rps):
                 # Step 2a: resolve destination device + RearPort.
                 if row["dest_device_mode"] == "create":
                     from dcim.models import Device

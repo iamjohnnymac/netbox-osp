@@ -63,12 +63,15 @@ def _build_fixtures():
         slug="patchpanel-24",
         u_height=1,
     )
-    RearPortTemplate.objects.create(
-        device_type=src_type,
-        name="panel-trunk",
-        type="mpo",
-        positions=24,
-    )
+    # Source patch panel needs one RearPort per destination — the deploy
+    # consumes one free source-side port per destination row.
+    for i in range(1, 7):
+        RearPortTemplate.objects.create(
+            device_type=src_type,
+            name=f"panel-mpo-{i:02d}",
+            type="mpo",
+            positions=12,
+        )
 
     # Cassette device-type with one 12-position RearPort template.
     cassette_type = DeviceType.objects.create(
@@ -101,8 +104,7 @@ def _build_fixtures():
         face="front",
         status="active",
     )
-    # `Device.save()` auto-creates the RearPort via the template.
-    src_rear_port = src_device.rearports.first()
+    # `Device.save()` auto-creates 6 RearPorts via the templates.
 
     return {
         "site": site,
@@ -115,7 +117,6 @@ def _build_fixtures():
         "rack_b": rack_b,
         "rack_c": rack_c,
         "src_device": src_device,
-        "src_rear_port": src_rear_port,
     }
 
 
@@ -131,7 +132,6 @@ def _form_data(fx, destinations):
         "manufacturer": str(fx["manufacturer"].pk),
         "source_rack": str(fx["rack_mmr"].pk),
         "source_device": str(fx["src_device"].pk),
-        "source_rear_port": str(fx["src_rear_port"].pk),
         "cassette_device_type": str(fx["cassette_type"].pk),
         "cassette_device_role": str(fx["role"].pk),
         "cable_type": "smf",

@@ -136,18 +136,9 @@ class MtpHarnessForm(forms.Form):
         required=True,
         label="Source device",
         query_params={"rack_id": "$source_rack"},
-        help_text="The patch-panel device the trunk originates from.",
-    )
-    source_rear_port = DynamicModelChoiceField(
-        queryset=RearPort.objects.all(),
-        required=True,
-        label="Source rear port",
-        query_params={
-            "device_id": "$source_device",
-            "cabled": "false",
-        },
-        help_text="A free RearPort on the source device. Already-cabled "
-                  "ports are filtered out.",
+        help_text="The patch-panel device the trunk originates from. "
+                  "One free RearPort is consumed per destination row, "
+                  "picked in alphabetical name order.",
     )
 
     # Cassette destination defaults.
@@ -186,7 +177,7 @@ class MtpHarnessDestinationForm(forms.Form):
 
     Each row spawns: optionally one new `dcim.Device` (when
     `dest_device_mode == 'create'`), one `dcim.Cable` from the parent
-    form's `source_rear_port` to this row's RearPort, and one
+    form's `source_device` to this row's RearPort, and one
     `TrunkBreakout` binding the cable to the parent trunk at the chosen
     fibre range.
 
