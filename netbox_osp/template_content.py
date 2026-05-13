@@ -23,4 +23,23 @@ class SiteOspMapTab(PluginTemplateExtension):
         )
 
 
-template_extensions = [SiteOspMapTab]
+class LocationGeoPanel(PluginTemplateExtension):
+    """Inject a 'GPS position' panel into dcim.Location detail pages.
+
+    Shows the LocationGeo (if any) plus add/edit buttons. Always rendered,
+    even when no LocationGeo exists, so operators have a one-click path to
+    record coords.
+    """
+    models = ["dcim.location"]
+
+    def right_page(self):
+        from .models import LocationGeo
+        location = self.context["object"]
+        geo = LocationGeo.objects.filter(location=location).first()
+        return self.render(
+            "netbox_osp/inc/location_geo_panel.html",
+            extra_context={"geo": geo},
+        )
+
+
+template_extensions = [SiteOspMapTab, LocationGeoPanel]

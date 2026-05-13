@@ -336,6 +336,49 @@ class FibreLinkDeleteView(generic.ObjectDeleteView):
 
 
 # ============================================================================
+# LocationGeo (per-Location GPS markers)
+# ============================================================================
+
+class LocationGeoView(generic.ObjectView):
+    queryset = models.LocationGeo.objects.select_related("location__site").all()
+
+
+class LocationGeoListView(generic.ObjectListView):
+    queryset = models.LocationGeo.objects.select_related("location__site").all()
+    table = tables.LocationGeoTable
+    filterset = filtersets.LocationGeoFilterSet
+    filterset_form = forms.LocationGeoFilterForm
+
+
+class LocationGeoEditView(generic.ObjectEditView):
+    queryset = models.LocationGeo.objects.all()
+    form = forms.LocationGeoForm
+
+
+class LocationGeoDeleteView(generic.ObjectDeleteView):
+    queryset = models.LocationGeo.objects.all()
+
+
+class LocationGeoBulkEditView(generic.BulkEditView):
+    queryset = models.LocationGeo.objects.select_related("location__site").all()
+    filterset = filtersets.LocationGeoFilterSet
+    table = tables.LocationGeoTable
+    form = forms.LocationGeoBulkEditForm
+
+
+class LocationGeoBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.LocationGeo.objects.select_related("location__site").all()
+    filterset = filtersets.LocationGeoFilterSet
+    table = tables.LocationGeoTable
+
+
+class LocationGeoBulkImportView(generic.BulkImportView):
+    queryset = models.LocationGeo.objects.all()
+    model_form = forms.LocationGeoImportForm
+    table = tables.LocationGeoTable
+
+
+# ============================================================================
 # Network Map
 # ============================================================================
 
@@ -392,7 +435,17 @@ class NetworkMapDataView(LoginRequiredMixin, View):
             sites_qs = sites_qs.filter(pk__in=site_ids)
         closures_qs = models.SpliceClosure.objects.exclude(location_point__isnull=True)
 
-        return JsonResponse(build_map_geojson(sites_qs, cables_qs, closures_qs))
+        # LocationGeo: only those with both coords set, filtered by site if asked.
+        loc_geos_qs = (
+            models.LocationGeo.objects
+            .select_related("location__site")
+            .exclude(latitude__isnull=True)
+            .exclude(longitude__isnull=True)
+        )
+        if site_ids:
+            loc_geos_qs = loc_geos_qs.filter(location__site_id__in=site_ids)
+
+        return JsonResponse(build_map_geojson(sites_qs, cables_qs, closures_qs, loc_geos_qs))
 
 
 # ============================================================================

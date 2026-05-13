@@ -3,7 +3,8 @@ from rest_framework import serializers
 from netbox.api.serializers import NetBoxModelSerializer
 
 from ..models import (
-    FibreLink, FibreLinkStrand, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
+    FibreLink, FibreLinkStrand, LocationGeo, OspCable, Splice, SpliceClosure,
+    SpliceTray, Strand, Tube,
 )
 from ..models._geo import validate_linestring, validate_point
 
@@ -107,6 +108,22 @@ class SpliceSerializer(NetBoxModelSerializer):
             "tags", "custom_fields", "created", "last_updated",
         )
         brief_fields = ("id", "url", "display", "position", "splice_type")
+
+
+class LocationGeoSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_osp-api:locationgeo-detail")
+    has_coords = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = LocationGeo
+        fields = (
+            "id", "url", "display", "location",
+            "latitude", "longitude", "elevation_m",
+            "marker_color", "description",
+            "has_coords",
+            "tags", "custom_fields", "created", "last_updated",
+        )
+        brief_fields = ("id", "url", "display", "location")
 
 
 class FibreLinkStrandSerializer(serializers.ModelSerializer):

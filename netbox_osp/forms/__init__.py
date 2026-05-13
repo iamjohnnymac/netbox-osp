@@ -1,5 +1,6 @@
 from .bulk_edit import (
     FibreLinkBulkEditForm,
+    LocationGeoBulkEditForm,
     OspCableBulkEditForm,
     SpliceBulkEditForm,
     SpliceClosureBulkEditForm,
@@ -9,6 +10,7 @@ from .bulk_edit import (
 )
 from .filtersets import (
     FibreLinkFilterForm,
+    LocationGeoFilterForm,
     OspCableFilterForm,
     SpliceClosureFilterForm,
     SpliceFilterForm,
@@ -17,6 +19,7 @@ from .filtersets import (
     TubeFilterForm,
 )
 from .imports import (
+    LocationGeoImportForm,
     OspCableImportForm,
     SpliceClosureImportForm,
     SpliceImportForm,
@@ -26,6 +29,7 @@ from .imports import (
 )
 from .model_forms import (
     FibreLinkForm,
+    LocationGeoForm,
     OspCableForm,
     SpliceClosureForm,
     SpliceForm,
@@ -37,6 +41,7 @@ from .model_forms import (
 __all__ = [
     # Model forms
     "FibreLinkForm",
+    "LocationGeoForm",
     "OspCableForm",
     "SpliceClosureForm",
     "SpliceForm",
@@ -45,6 +50,7 @@ __all__ = [
     "TubeForm",
     # Filter forms
     "FibreLinkFilterForm",
+    "LocationGeoFilterForm",
     "OspCableFilterForm",
     "SpliceClosureFilterForm",
     "SpliceFilterForm",
@@ -53,6 +59,7 @@ __all__ = [
     "TubeFilterForm",
     # Bulk edit forms
     "FibreLinkBulkEditForm",
+    "LocationGeoBulkEditForm",
     "OspCableBulkEditForm",
     "SpliceBulkEditForm",
     "SpliceClosureBulkEditForm",
@@ -60,6 +67,7 @@ __all__ = [
     "StrandBulkEditForm",
     "TubeBulkEditForm",
     # CSV import forms
+    "LocationGeoImportForm",
     "OspCableImportForm",
     "SpliceClosureImportForm",
     "SpliceImportForm",

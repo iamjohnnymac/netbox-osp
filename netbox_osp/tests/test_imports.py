@@ -8,6 +8,7 @@ prior and is exercised indirectly by test_models.py.)
 from utilities.testing import TestCase
 
 from netbox_osp.forms import (
+    LocationGeoImportForm,
     SpliceClosureImportForm,
     SpliceImportForm,
     SpliceTrayImportForm,
@@ -15,6 +16,7 @@ from netbox_osp.forms import (
     TubeImportForm,
 )
 from netbox_osp.models import (
+    LocationGeo,
     Splice,
     SpliceClosure,
     SpliceTray,
@@ -92,6 +94,36 @@ class StrandImportTests(TestCase):
         })
         self.assertFalse(form.is_valid())
         self.assertIn("tube", form.errors)
+
+
+class LocationGeoImportTests(TestCase):
+    def _make_location(self, name, slug):
+        from dcim.models import Location
+        site = _make_site(name=f"{name}-site", slug=f"{slug}-site")
+        return Location.objects.create(name=name, slug=slug, site=site)
+
+    def test_happy_path(self):
+        loc = self._make_location("IMP-LOC-1", "imp-loc-1")
+        form = LocationGeoImportForm(data={
+            "location": loc.slug,
+            "latitude": "-31.95",
+            "longitude": "115.86",
+            "marker_color": "#1565c0",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        self.assertEqual(LocationGeo.objects.filter(location=loc).count(), 1)
+
+    def test_rejects_duplicate_location(self):
+        loc = self._make_location("IMP-LOC-2", "imp-loc-2")
+        LocationGeo.objects.create(location=loc)
+        form = LocationGeoImportForm(data={
+            "location": loc.slug,
+            "latitude": "-31.95",
+            "longitude": "115.86",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("location", form.errors)
 
 
 class SpliceClosureImportTests(TestCase):

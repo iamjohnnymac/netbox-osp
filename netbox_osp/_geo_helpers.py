@@ -73,7 +73,35 @@ def closure_feature(closure):
     }
 
 
-def build_map_geojson(sites_qs, cables_qs, closures_qs):
+def locationgeo_feature(geo):
+    """Build a GeoJSON Feature for a LocationGeo with both coords set."""
+    if geo.latitude is None or geo.longitude is None:
+        return None
+    return {
+        "type": "Feature",
+        "id": f"location-{geo.pk}",
+        "geometry": {
+            "type": "Point",
+            "coordinates": [float(geo.longitude), float(geo.latitude)],
+        },
+        "properties": {
+            "kind": "location_geo",
+            "pk": geo.pk,
+            "location_pk": geo.location.pk,
+            "name": geo.location.name,
+            "site": geo.location.site.name if geo.location.site else None,
+            "marker_color": geo.marker_color,
+            "description": geo.description,
+            "elevation_m": float(geo.elevation_m) if geo.elevation_m is not None else None,
+            # Link to the underlying dcim.Location detail page so operators land
+            # in NetBox's native Location view, not a stand-alone LocationGeo page.
+            "url": geo.location.get_absolute_url(),
+            "geo_url": geo.get_absolute_url(),
+        },
+    }
+
+
+def build_map_geojson(sites_qs, cables_qs, closures_qs, loc_geos_qs=None):
     features = []
     for s in sites_qs:
         f = site_feature(s)
@@ -87,4 +115,9 @@ def build_map_geojson(sites_qs, cables_qs, closures_qs):
         f = closure_feature(cl)
         if f:
             features.append(f)
+    if loc_geos_qs is not None:
+        for g in loc_geos_qs:
+            f = locationgeo_feature(g)
+            if f:
+                features.append(f)
     return {"type": "FeatureCollection", "features": features}

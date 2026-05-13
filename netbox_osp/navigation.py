@@ -35,6 +35,7 @@ link_buttons = (
         icon_class="mdi mdi-plus-thick",
     ),
 )
+locationgeo_buttons = _add_import_buttons("locationgeo")
 
 
 menu = PluginMenu(
@@ -45,6 +46,11 @@ menu = PluginMenu(
             PluginMenuItem(
                 link="plugins:netbox_osp:network_map",
                 link_text="Network Map",
+            ),
+            PluginMenuItem(
+                link="plugins:netbox_osp:locationgeo_list",
+                link_text="Location GPS",
+                buttons=locationgeo_buttons,
             ),
         )),
         ("OSP Cables", (
