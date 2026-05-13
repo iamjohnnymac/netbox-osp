@@ -18,21 +18,10 @@ from netbox.views import generic
 
 from . import forms, models, tables, filtersets
 
-# AbortRequest is the exception raised by NetBox's `trace_paths` signal
-# when a cable path is impossible (UnsupportedCablePath). The import path
-# is netbox.core / netbox-side; guard for variation across 4.6 minor
-# versions so we don't blow up at module-import time on an env that
-# relocates the class.
-try:  # pragma: no cover - import-path guard
-    from utilities.exceptions import AbortRequest
-except ImportError:  # pragma: no cover
-    try:
-        from netbox.exceptions import AbortRequest
-    except ImportError:
-        class AbortRequest(Exception):  # type: ignore[no-redef]
-            """Fallback if NetBox relocates the exception. Cable signals
-            still raise something; we'll surface it as a generic
-            non-field error in the catch-all branch below."""
+# AbortRequest is the exception NetBox's `trace_paths` signal raises when
+# a cable path is impossible (UnsupportedCablePath). Canonical path
+# confirmed in NetBox 4.6.0 dcim/models/cables.py:24 and 343.
+from utilities.exceptions import AbortRequest
 
 
 # ============================================================================
@@ -659,7 +648,6 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = (
         "netbox_osp.add_fibretrunk",
         "netbox_osp.add_trunkbreakout",
-        "dcim.add_device",
         "dcim.add_cable",
     )
     template_name = "netbox_osp/mtp_harness_deploy.html"
@@ -680,9 +668,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
             if row and not row.get("DELETE")
         ]
         if not cleaned_rows:
-            dest_formset._non_form_errors = dest_formset.error_class(
-                ["At least one destination row is required."]
-            )
+            dest_formset.add_error(None, "At least one destination row is required.")
             return False
 
         ok = True
@@ -690,9 +676,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # 1. Duplicate destination racks.
         rack_pks = [row["dest_rack"].pk for row in cleaned_rows]
         if len(set(rack_pks)) != len(rack_pks):
-            dest_formset._non_form_errors = dest_formset.error_class(
-                ["Each destination rack must be unique."]
-            )
+            dest_formset.add_error(None, "Each destination rack must be unique.")
             ok = False
 
         # 2. Sum of fibre ranges <= trunk.fibre_count.
@@ -736,7 +720,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # 4. Source rear port not selected as a destination rear port.
         source_rp = parent_form.cleaned_data.get("source_rear_port")
         if source_rp is not None:
-            for idx, row in enumerate(cleaned_rows):
+            for row in cleaned_rows:
                 drp = row.get("dest_rear_port")
                 if drp is not None and drp.pk == source_rp.pk:
                     # Locate the form in the formset
@@ -992,7 +976,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
                     status=cable_status_connected,
                     label=row.get("cable_label") or "",
                     length=effective_length,
-                    length_unit="m" if effective_length is not None else "",
+                    length_unit="m" if effective_length is not None else None,
                 )
                 cable.a_terminations = [source_rp]
                 cable.b_terminations = [dest_rp]
