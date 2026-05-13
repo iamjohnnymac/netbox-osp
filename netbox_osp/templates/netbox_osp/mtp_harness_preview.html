@@ -1,0 +1,77 @@
+{% extends 'base/layout.html' %}
+{% load helpers %}
+
+{% block title %}Confirm MTP Harness Deploy{% endblock %}
+
+{% block content %}
+<div id="harness-preview" class="row">
+    <div class="col">
+        <h2>Confirm MTP Harness Deploy</h2>
+        <p class="text-muted">
+            Review the objects that will be created. Nothing has been
+            written yet — clicking <strong>Confirm and deploy</strong>
+            runs the entire batch inside one atomic transaction. If any
+            row fails validation, no rows are written.
+        </p>
+
+        <div class="card mb-3">
+            <h5 class="card-header">Trunk</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>CID</th><td>{{ parent.trunk_cid }}</td></tr>
+                <tr><th>Type</th><td>{{ parent.trunk_type }}</td></tr>
+                <tr><th>Fibre count</th><td>{{ parent.fibre_count }}</td></tr>
+                <tr><th>Length (m)</th><td>{{ parent.length_m|default:"&mdash;" }}</td></tr>
+                <tr><th>Manufacturer</th><td>{{ parent.manufacturer|default:"&mdash;" }}</td></tr>
+                <tr><th>Cassette device-type</th><td>{{ parent.cassette_device_type }}</td></tr>
+                <tr><th>Cassette device-role</th><td>{{ parent.cassette_device_role }}</td></tr>
+                <tr><th>Cable type</th><td>{{ parent.cable_type }}</td></tr>
+            </table>
+        </div>
+
+        <div class="card mb-3">
+            <h5 class="card-header">
+                Destinations ({{ preview_rows|length }})
+            </h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Rack</th>
+                        <th>Device</th>
+                        <th>Rear port</th>
+                        <th>Fibre range</th>
+                        <th>Cable label</th>
+                        <th>Length (m)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview_rows %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ row.rack }}</td>
+                            <td>{{ row.device }}</td>
+                            <td>{{ row.rear_port }}</td>
+                            <td>{{ row.fibre_range }}</td>
+                            <td>{{ row.cable_label }}</td>
+                            <td>{{ row.cable_length_m|default:"&mdash;" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <form method="post" action="{% url 'plugins:netbox_osp:mtp_harness_deploy' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="confirm" value="1">
+            <input type="hidden" name="state_token" value="{{ state_token }}">
+            <button type="submit" class="btn btn-success">
+                <i class="mdi mdi-rocket-launch"></i> Confirm and deploy
+            </button>
+            <a href="{% url 'plugins:netbox_osp:mtp_harness_deploy' %}"
+               class="btn btn-outline-secondary">
+                Back to edit
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

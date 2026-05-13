@@ -41,13 +41,19 @@ Per-release NetBox / Python compatibility lives on the
   bind of unbound `dcim.Cable`s to fibre ranges.
 - **REST + GraphQL** for `TrunkBreakout`.
 - **CSV bulk import** keyed by `trunk_cid` + `cable_label`.
+- **MTP harness one-click deploy form** at
+  `/plugins/osp/trunks/deploy-harness/` — a single form submit creates
+  the parent `FibreTrunk` + N cassette `dcim.Device`s + N
+  `dcim.Cable`s + N `TrunkBreakout` rows atomically. Two-step
+  preview/confirm flow uses `django.core.signing.dumps`
+  (base64-encoded, HTML-safe) for the state token. Replaces ~30
+  individual NetBox object writes with one form.
 - **Bundled cassette catalogue** — five `DeviceType` JSON templates at
   `netbox_osp/device_types/cassettes/` covering the standard MPO/MTP
-  fibre-cassette and LC patch-panel shapes:
-  `mpo-12f-lc-cassette`, `mpo-24f-lc-cassette`, `mpo-12f-mpo-cassette`,
-  `lgx-lc-12f-panel`, `ru1-lc-24f-panel`. Files follow the
-  `netbox-community/devicetype-library` schema and pair with the
-  `MtpHarness` deploy form.
+  fibre-cassette and LC patch-panel shapes that pair with the MTP
+  harness deploy form: `mpo-12f-lc-cassette`, `mpo-24f-lc-cassette`,
+  `mpo-12f-mpo-cassette`, `lgx-lc-12f-panel`, `ru1-lc-24f-panel`.
+  Files follow the `netbox-community/devicetype-library` schema.
 - **`load_osp_cassettes` management command** — seeds all five
   cassettes idempotently:
 
@@ -75,8 +81,8 @@ Per-release NetBox / Python compatibility lives on the
   read-only over the existing data model.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PRs A, B, D, and E; PR C (MtpHarness) appends to this
-`Unreleased` block once it merges.
+documents PRs A, B, C, D, and E. All five v0.2 features
+landed; v0.2.0 is ready to tag.
 
 ## 0.1.1 — 2026-05-13
 

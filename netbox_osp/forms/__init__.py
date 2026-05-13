@@ -45,7 +45,12 @@ from .model_forms import (
     TrunkBreakoutForm,
     TubeForm,
 )
-from .wizards import ImportCablesIntoTrunkForm
+from .wizards import (
+    ImportCablesIntoTrunkForm,
+    MtpHarnessDestinationForm,
+    MtpHarnessDestinationFormSet,
+    MtpHarnessForm,
+)
 
 __all__ = [
     # Model forms
@@ -93,4 +98,7 @@ __all__ = [
     "TubeImportForm",
     # Wizards
     "ImportCablesIntoTrunkForm",
+    "MtpHarnessDestinationForm",
+    "MtpHarnessDestinationFormSet",
+    "MtpHarnessForm",
 ]
