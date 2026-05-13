@@ -200,6 +200,22 @@
     color: #6cb8ff;
 }
 
+/* ---- Loss-budget SVG gauge -------------------------------------------- */
+/* Inline gauge on the FibreLink detail page. The viewBox is 0 0 200 32; we
+   let it fill the table cell width and keep the height capped so it doesn't
+   crowd surrounding rows. */
+.osp-loss-gauge {
+    width: 100%;
+    height: 36px;
+    max-width: 460px;
+    display: block;
+}
+
+.osp-loss-gauge text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono",
+                 "Roboto Mono", Consolas, monospace;
+}
+
 /* ---- Offline-fallback toast ------------------------------------------- */
 /* Sits at top-right (Bootstrap toast-container default position). Shown
    once when auto-fallback fires; the user can dismiss or click Retry. */

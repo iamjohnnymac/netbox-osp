@@ -101,6 +101,40 @@ class FibreLink(NetBoxModel):
             return "warn"
         return "fail"
 
+    @property
+    def loss_budget_gauge(self):
+        """Pre-computed dict ready for the SVG gauge template.
+
+        The gauge viewBox is 200 wide; the "100% of target" mark sits at
+        x=133.33 so a 50% overflow zone is always visible. Anything over
+        150% gets clipped to the right edge.
+
+        Returns: dict with
+            pct       : raw percentage (may exceed 100; used for the label)
+            width_vb  : the indicator bar's width in viewBox units (0..200)
+            color     : hex colour driven by loss_budget_band
+            band      : 'ok' | 'warn' | 'fail'
+            total_db  : current total loss as a float (template-friendly)
+            target_db : target budget as a float
+        """
+        pct = self.loss_budget_pct
+        clipped = max(min(pct, 150.0), 0.0)
+        width_vb = round((clipped / 150.0) * 200, 2)
+        band = self.loss_budget_band
+        color = {
+            "ok": "#28a745",
+            "warn": "#ffc107",
+            "fail": "#dc3545",
+        }.get(band, "#6c757d")
+        return {
+            "pct": round(pct, 1),
+            "width_vb": width_vb,
+            "color": color,
+            "band": band,
+            "total_db": float(self.total_loss_db),
+            "target_db": float(self.target_loss_budget_db),
+        }
+
     def trace(self):
         """Return the ordered list of (Strand, Splice|None) hops that make up this link.
         Splice is None for the last hop (terminates at b)."""
