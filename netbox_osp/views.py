@@ -336,7 +336,7 @@ class FibreLinkDeleteView(generic.ObjectDeleteView):
 
 
 # ============================================================================
-# Map (full-screen + GeoJSON data + tile proxy)
+# Network Map
 # ============================================================================
 
 class NetworkMapView(LoginRequiredMixin, View):
@@ -366,92 +366,128 @@ class NetworkMapDataView(LoginRequiredMixin, View):
         statuses = request.GET.getlist("status")
         types = request.GET.getlist("type")
 
-        site_qs = Site.objects.all()
-        cable_qs = models.OspCable.objects.select_related("site_a", "site_b").all()
-        closure_qs = models.SpliceClosure.objects.select_related("site").all()
-
+        cables_qs = models.OspCable.objects.select_related("site_a", "site_b")
         if site_ids:
-            site_qs = site_qs.filter(pk__in=site_ids)
-            cable_qs = cable_qs.filter(Q(site_a__in=site_ids) | Q(site_b__in=site_ids))
-            closure_qs = closure_qs.filter(site__in=site_ids)
+            cables_qs = cables_qs.filter(
+                Q(site_a_id__in=site_ids) | Q(site_b_id__in=site_ids)
+            )
         if statuses:
-            cable_qs = cable_qs.filter(status__in=statuses)
-            closure_qs = closure_qs.filter(status__in=statuses)
+            cables_qs = cables_qs.filter(status__in=statuses)
         if types:
-            cable_qs = cable_qs.filter(type__in=types)
+            cables_qs = cables_qs.filter(type__in=types)
 
-        geojson = build_map_geojson(site_qs, cable_qs, closure_qs)
-        return JsonResponse(geojson)
+        # Only surface sites that actually appear as an OSP cable endpoint —
+        # otherwise the map auto-fit pulls in unrelated sites and zooms way
+        # out past the tile coverage area.
+        cable_site_ids = set(cables_qs.values_list("site_a_id", flat=True)) | set(
+            cables_qs.values_list("site_b_id", flat=True)
+        )
+        sites_qs = (
+            Site.objects
+            .filter(pk__in=cable_site_ids)
+            .exclude(latitude__isnull=True)
+            .exclude(longitude__isnull=True)
+        )
+        if site_ids:
+            sites_qs = sites_qs.filter(pk__in=site_ids)
+        closures_qs = models.SpliceClosure.objects.exclude(location_point__isnull=True)
+
+        return JsonResponse(build_map_geojson(sites_qs, cables_qs, closures_qs))
 
 
-# ----------------------------------------------------------------------------
-# Tile proxy — serves PNG / JPEG / WebP tiles from one or more MBTiles files.
-# ----------------------------------------------------------------------------
+# ============================================================================
+# Tile proxy (offline MBTiles)
+# ============================================================================
 
-_TILE_DB_CACHE = {}                 # thread-local in _open_mbtiles
-_TILE_CONN_CACHE = {}               # thread-local connections per file
+import threading
 
-_MIME_BY_EXT = {
-    "png":  "image/png",
-    "jpg":  "image/jpeg",
-    "jpeg": "image/jpeg",
-    "webp": "image/webp",
-}
+_MBTILES_LOCAL = threading.local()
 
 
-def _open_mbtiles(path: Path) -> sqlite3.Connection:
-    """Return a thread-local sqlite3 connection for the given file."""
-    import threading
-    tls = getattr(_open_mbtiles, "_tls", None)
-    if tls is None:
-        tls = threading.local()
-        _open_mbtiles._tls = tls
-    key = str(path)
-    conn = getattr(tls, "conns", {}).get(key)
+def _open_mbtiles(path):
+    """Open one connection per thread per file. SQLite is fine for read-only
+    concurrent access as long as each thread has its own handle."""
+    cache = getattr(_MBTILES_LOCAL, "conns", None)
+    if cache is None:
+        cache = {}
+        _MBTILES_LOCAL.conns = cache
+    conn = cache.get(path)
     if conn is None:
-        conn = sqlite3.connect(str(path), check_same_thread=False)
-        if not hasattr(tls, "conns"):
-            tls.conns = {}
-        tls.conns[key] = conn
+        conn = sqlite3.connect(path, check_same_thread=False, uri=False)
+        cache[path] = conn
     return conn
 
 
 class TileProxyView(LoginRequiredMixin, View):
-    """Serve a single tile from the first MBTiles bundle that has it."""
+    """Serve a single tile from a bundled MBTiles file.
+
+    MBTiles uses TMS y-axis (origin bottom-left); Leaflet uses XYZ (top-left).
+    Convert: tms_y = (2^z - 1) - y.
+
+    Lookup order:
+      1. MEDIA_ROOT/osp_tiles/*.mbtiles (user-supplied high-res overlays)
+      2. <plugin>/static/netbox_osp/tiles/basemap.mbtiles
+    """
 
     def get(self, request, z, x, y, ext):
-        ext = ext.lower()
-        if ext not in _MIME_BY_EXT:
-            return HttpResponseNotFound("Unsupported tile extension.")
+        if ext.lower() not in ("png", "jpg", "jpeg", "webp"):
+            return HttpResponseNotFound("unsupported tile extension")
 
-        # MBTiles stores rows TMS-style (origin bottom-left); incoming y is XYZ.
         tms_y = (1 << z) - 1 - y
+
         candidate_paths = []
         media_dir = Path(getattr(settings, "MEDIA_ROOT", "/opt/netbox/netbox/media")) / "osp_tiles"
         if media_dir.is_dir():
             candidate_paths.extend(sorted(media_dir.glob("*.mbtiles")))
         plugin_tiles = Path(__file__).parent / "static" / "netbox_osp" / "tiles"
         if plugin_tiles.is_dir():
+            # All *.mbtiles in the plugin tiles dir, alpha-sorted, but with
+            # basemap.mbtiles forced last so real-imagery bundles override
+            # the stub fallback when keys overlap (e.g. z=0).
             files = [p for p in plugin_tiles.glob("*.mbtiles") if p.name != "basemap.mbtiles"]
             candidate_paths.extend(sorted(files))
             basemap = plugin_tiles / "basemap.mbtiles"
             if basemap.is_file():
                 candidate_paths.append(basemap)
 
-        for path in candidate_paths:
+        tile_blob = None
+        for p in candidate_paths:
             try:
-                conn = _open_mbtiles(path)
-                cur = conn.execute(
-                    "SELECT tile_data FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?",
+                conn = _open_mbtiles(str(p))
+                row = conn.execute(
+                    "SELECT tile_data FROM tiles "
+                    "WHERE zoom_level=? AND tile_column=? AND tile_row=?",
                     (z, x, tms_y),
-                )
-                row = cur.fetchone()
-                if row:
-                    response = HttpResponse(row[0], content_type=_MIME_BY_EXT[ext])
-                    response["Cache-Control"] = "public, max-age=86400"
-                    return response
+                ).fetchone()
+                if row is not None:
+                    tile_blob = row[0]
+                    break
             except sqlite3.Error:
                 continue
 
-        # No bundle had this tile.
-        return HttpResponseNotFound(f"No tile at z={z} x={x} y={y}")
+        if tile_blob is None:
+            # 1x1 transparent PNG so the map doesn't show 404s in F12
+            blank = bytes.fromhex(
+                "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+                "890000000d49444154789c63600000000005000160d4a83f0000000049454e44"
+                "ae426082"
+            )
+            resp = HttpResponse(blank, content_type="image/png")
+            resp["Cache-Control"] = "public, max-age=86400"
+            return resp
+
+        etag = hashlib.md5(tile_blob).hexdigest()
+        if request.META.get("HTTP_IF_NONE_MATCH") == f'"{etag}"':
+            return HttpResponse(status=304)
+
+        if ext.lower() in ("jpg", "jpeg"):
+            content_type = "image/jpeg"
+        elif ext.lower() == "webp":
+            content_type = "image/webp"
+        else:
+            content_type = "image/png"
+
+        resp = HttpResponse(tile_blob, content_type=content_type)
+        resp["ETag"] = f'"{etag}"'
+        resp["Cache-Control"] = "public, max-age=31536000, immutable"
+        return resp
