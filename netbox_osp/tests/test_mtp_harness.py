@@ -239,6 +239,16 @@ class MtpHarnessPostTests(TestCase):
             _destination_create(self.fx["rack_b"], "CST-B", "10.0", 13, 24),
         ])
         resp = self._post_confirm(data)
+        # DEBUG: dump response body if assertion would fail
+        if FibreTrunk.objects.count() != 1:
+            print("=== DEBUG: response status:", resp.status_code)
+            print("=== DEBUG: response location:", resp.get("Location", "(none)"))
+            try:
+                body = resp.content.decode()[:3000]
+            except Exception:
+                body = "(no content)"
+            print("=== DEBUG: response body[:3000]:")
+            print(body)
         self.assertEqual(resp.status_code, 302, resp.content[:500])
         self.assertEqual(FibreTrunk.objects.count(), 1)
         trunk = FibreTrunk.objects.first()
