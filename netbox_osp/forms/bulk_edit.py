@@ -7,6 +7,7 @@ from utilities.forms.fields import DynamicModelChoiceField
 from ..choices import (
     ClosureTypeChoices,
     FibreLinkStatusChoices,
+    LocationMarkerColorChoices,
     OspCableTypeChoices,
     OspStatusChoices,
     SpliceTypeChoices,
@@ -15,6 +16,7 @@ from ..choices import (
 )
 from ..models import (
     FibreLink,
+    LocationGeo,
     OspCable,
     Splice,
     SpliceClosure,
@@ -80,3 +82,10 @@ class SpliceBulkEditForm(NetBoxModelBulkEditForm):
 
     model = Splice
     nullable_fields = ("description", "spliced_by", "otdr_trace_url")
+
+
+class LocationGeoBulkEditForm(NetBoxModelBulkEditForm):
+    marker_color = forms.ChoiceField(choices=LocationMarkerColorChoices, required=False)
+
+    model = LocationGeo
+    nullable_fields = ("description", "elevation_m")

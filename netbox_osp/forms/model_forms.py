@@ -7,7 +7,7 @@ from dcim.models import Cable, Location, Manufacturer, Site
 from tenancy.models import Tenant
 
 from ..models import (
-    FibreLink, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
+    FibreLink, LocationGeo, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
 )
 
 
@@ -103,4 +103,18 @@ class FibreLinkForm(NetBoxModelForm):
         fields = (
             "name", "status", "connector_loss_db", "connectors_per_end",
             "target_loss_budget_db", "description", "comments", "tags",
+        )
+
+
+class LocationGeoForm(NetBoxModelForm):
+    location = DynamicModelChoiceField(
+        queryset=Location.objects.all(), required=True,
+        help_text="The Location this GPS record belongs to.",
+    )
+
+    class Meta:
+        model = LocationGeo
+        fields = (
+            "location", "latitude", "longitude", "elevation_m",
+            "marker_color", "description", "tags",
         )

@@ -238,6 +238,9 @@
         const cableLayer = L.layerGroup().addTo(map);
         const siteCluster = L.markerClusterGroup ? L.markerClusterGroup() : L.layerGroup();
         const closureCluster = L.markerClusterGroup ? L.markerClusterGroup() : L.layerGroup();
+        // Location markers are L.circleMarker — not clustered, since users
+        // expect them to stay put as fine-grained intra-site pins.
+        const locationLayer = L.layerGroup().addTo(map);
         map.addLayer(siteCluster);
         map.addLayer(closureCluster);
 
@@ -249,6 +252,7 @@
             'Sites': siteCluster,
             'OSP cables': cableLayer,
             'Splice closures': closureCluster,
+            'Location markers': locationLayer,
         }, { collapsed: false }).addTo(map);
 
         const siteIcon = L.divIcon({
@@ -264,7 +268,7 @@
             iconAnchor: [11, 11],
         });
 
-        let counts = { sites: 0, cables: 0, closures: 0 };
+        let counts = { sites: 0, cables: 0, closures: 0, locations: 0 };
 
         function loadData() {
             const status = Array.from(document.getElementById('osp-filter-status').selectedOptions)
@@ -276,7 +280,8 @@
             cableLayer.clearLayers();
             siteCluster.clearLayers();
             closureCluster.clearLayers();
-            counts = { sites: 0, cables: 0, closures: 0 };
+            locationLayer.clearLayers();
+            counts = { sites: 0, cables: 0, closures: 0, locations: 0 };
 
             fetch(url, { credentials: 'same-origin' })
                 .then(r => r.json())
@@ -331,6 +336,30 @@
                             mk.addTo(closureCluster);
                             bounds.push(ll);
                             counts.closures++;
+                        } else if (props.kind === 'location_geo' && geom.type === 'Point') {
+                            const ll = [geom.coordinates[1], geom.coordinates[0]];
+                            const elev = (props.elevation_m != null)
+                                ? `<br><small>${props.elevation_m} m elev.</small>` : '';
+                            const desc = props.description
+                                ? `<br><em>${escapeHtml(props.description)}</em>` : '';
+                            const site = props.site
+                                ? `<br><small>${escapeHtml(props.site)}</small>` : '';
+                            L.circleMarker(ll, {
+                                radius: 6,
+                                fillColor: props.marker_color || '#1565c0',
+                                color: '#ffffff',
+                                weight: 2,
+                                opacity: 1,
+                                fillOpacity: 0.85,
+                            })
+                                .bindPopup(
+                                    `<strong>${escapeHtml(props.name)}</strong>` +
+                                    site + desc + elev +
+                                    `<br><a href="${props.url}">Open location &raquo;</a>`
+                                )
+                                .addTo(locationLayer);
+                            bounds.push(ll);
+                            counts.locations++;
                         }
                     });
 
@@ -342,8 +371,13 @@
                     if (hasFilter && bounds.length) {
                         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
                     }
-                    document.getElementById('osp-map-stats').textContent =
-                        `${counts.sites} sites · ${counts.cables} cables · ${counts.closures} closures`;
+                    const parts = [
+                        `${counts.sites} sites`,
+                        `${counts.cables} cables`,
+                        `${counts.closures} closures`,
+                    ];
+                    if (counts.locations) parts.push(`${counts.locations} locations`);
+                    document.getElementById('osp-map-stats').textContent = parts.join(' · ');
                 })
                 .catch(err => {
                     console.error('OSP map data load failed', err);

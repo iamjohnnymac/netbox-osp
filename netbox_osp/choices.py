@@ -176,3 +176,34 @@ class FibreLinkStatusChoices(ChoiceSet):
         (STATUS_DOWN, "Down", "red"),
         (STATUS_DECOMMISSIONED, "Decommissioned", "gray"),
     ]
+
+
+class LocationMarkerColorChoices(ChoiceSet):
+    """Marker tint for per-Location GPS markers on the network map.
+
+    Each value is a hex colour that the Leaflet JS picks up verbatim for the
+    circle marker fill. Keep this list short — too many colours and operators
+    can't visually distinguish them at default zoom.
+    """
+
+    key = "LocationGeo.marker_color"
+
+    BLUE = "#1565c0"
+    GREEN = "#2e7d32"
+    RED = "#c62828"
+    AMBER = "#ef6c00"
+    PURPLE = "#6a1b9a"
+    CYAN = "#0277bd"
+    PINK = "#ad1457"
+    GRAY = "#455a64"
+
+    CHOICES = [
+        (BLUE,   "Blue",   "blue"),
+        (GREEN,  "Green",  "green"),
+        (RED,    "Red",    "red"),
+        (AMBER,  "Amber",  "yellow"),
+        (PURPLE, "Purple", "purple"),
+        (CYAN,   "Cyan",   "cyan"),
+        (PINK,   "Pink",   "pink"),
+        (GRAY,   "Gray",   "gray"),
+    ]

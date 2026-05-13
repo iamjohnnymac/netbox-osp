@@ -1,0 +1,57 @@
+{% load helpers %}
+<div class="card">
+    <h5 class="card-header">GPS position</h5>
+    <table class="table table-hover attr-table">
+        {% if geo %}
+            <tr>
+                <th>Latitude</th>
+                <td>{{ geo.latitude|default:"&mdash;" }}</td>
+            </tr>
+            <tr>
+                <th>Longitude</th>
+                <td>{{ geo.longitude|default:"&mdash;" }}</td>
+            </tr>
+            <tr>
+                <th>Elevation (m)</th>
+                <td>{{ geo.elevation_m|default:"&mdash;" }}</td>
+            </tr>
+            <tr>
+                <th>Marker color</th>
+                <td>
+                    <span style="display:inline-block;width:14px;height:14px;border-radius:50%;
+                                 background:{{ geo.marker_color }};border:1px solid rgba(0,0,0,0.4);
+                                 vertical-align:middle;"></span>
+                    <code>{{ geo.marker_color }}</code>
+                </td>
+            </tr>
+            {% if geo.description %}
+                <tr><th>Description</th><td>{{ geo.description }}</td></tr>
+            {% endif %}
+            <tr>
+                <th></th>
+                <td>
+                    <a href="{% url 'plugins:netbox_osp:locationgeo_edit' pk=geo.pk %}" class="btn btn-sm btn-warning">
+                        <i class="mdi mdi-pencil"></i> Edit GPS
+                    </a>
+                    {% if geo.has_coords %}
+                        {# Map page filters via the in-page Status dropdown, not query string. #}
+                        <a href="{% url 'plugins:netbox_osp:network_map' %}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="mdi mdi-map"></i> Open on map
+                        </a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="2" class="text-muted">
+                    No GPS position recorded for this Location.
+                    <a href="{% url 'plugins:netbox_osp:locationgeo_add' %}?location={{ object.pk }}"
+                       class="btn btn-sm btn-primary ms-2">
+                        <i class="mdi mdi-plus"></i> Set GPS position
+                    </a>
+                </td>
+            </tr>
+        {% endif %}
+    </table>
+</div>

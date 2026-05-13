@@ -3,12 +3,16 @@ from django import forms
 from netbox.forms import NetBoxModelImportForm
 from utilities.forms.fields import CSVChoiceField, CSVModelChoiceField
 
+from dcim.models import Location
+
 from ..choices import (
+    LocationMarkerColorChoices,
     SpliceTypeChoices,
     StrandStatusChoices,
     TIA598ColorChoices,
 )
 from ..models import (
+    LocationGeo,
     OspCable,
     Splice,
     SpliceClosure,
@@ -28,6 +32,38 @@ class OspCableImportForm(NetBoxModelImportForm):
             "site_a", "site_b", "tenant", "manufacturer", "part_number",
             "description",
         )
+
+
+class LocationGeoImportForm(NetBoxModelImportForm):
+    location = CSVModelChoiceField(
+        queryset=Location.objects.all(),
+        to_field_name="slug",
+        help_text="Location slug (one LocationGeo per Location).",
+    )
+    marker_color = CSVChoiceField(
+        choices=LocationMarkerColorChoices,
+        required=False,
+        help_text="Leave blank to use the default blue.",
+    )
+
+    class Meta:
+        model = LocationGeo
+        fields = (
+            "location", "latitude", "longitude",
+            "elevation_m", "marker_color", "description",
+        )
+
+    def clean(self):
+        super().clean()
+        location = self.cleaned_data.get("location")
+        if location is not None:
+            qs = LocationGeo.objects.filter(location=location)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError(
+                    {"location": f"a LocationGeo for {location} already exists."}
+                )
 
 
 class SpliceClosureImportForm(NetBoxModelImportForm):

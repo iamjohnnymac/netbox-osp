@@ -4,6 +4,7 @@ from netbox.tables import columns
 
 from .models import (
     FibreLink,
+    LocationGeo,
     OspCable,
     Splice,
     SpliceClosure,
@@ -118,6 +119,22 @@ class SpliceTable(NetBoxTable):
             "description", "tags", "created", "last_updated",
         )
         default_columns = ("tray", "position", "splice_type", "strand_a", "strand_b", "loss_db")
+
+
+class LocationGeoTable(NetBoxTable):
+    location = tables.Column(linkify=True)
+    latitude = tables.Column(verbose_name="Lat")
+    longitude = tables.Column(verbose_name="Lon")
+    marker_color = ChoiceFieldColumn()
+
+    class Meta(NetBoxTable.Meta):
+        model = LocationGeo
+        fields = (
+            "pk", "id", "location", "latitude", "longitude",
+            "elevation_m", "marker_color", "description",
+            "tags", "created", "last_updated",
+        )
+        default_columns = ("location", "latitude", "longitude", "marker_color")
 
 
 class FibreLinkTable(NetBoxTable):

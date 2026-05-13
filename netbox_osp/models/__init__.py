@@ -1,6 +1,7 @@
 from .cables import OspCable, Tube, Strand
 from .splices import SpliceClosure, SpliceTray, Splice
 from .links import FibreLink, FibreLinkStrand
+from .locations import LocationGeo
 
 __all__ = [
     "OspCable",
@@ -11,4 +12,5 @@ __all__ = [
     "Splice",
     "FibreLink",
     "FibreLinkStrand",
+    "LocationGeo",
 ]

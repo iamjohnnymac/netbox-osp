@@ -42,6 +42,37 @@ the boundary visually and copy the resulting coordinate list into your
 If `plant_boundary` is unset or `None`, no validation occurs and cables can
 route anywhere on the globe.
 
+## Per-Location GPS markers
+
+NetBox core gives Sites lat/lon but not Locations. The `LocationGeo` side-table
+fills that gap so you can pin individual rooms, manholes, jetty poles, or any
+other `dcim.Location` on the network map alongside Site markers.
+
+It's a 1:1 row per `dcim.Location`:
+
+```text
+plugins:netbox_osp:locationgeo_add  →  pick Location, enter lat/lon, save
+plugins:netbox_osp:locationgeo_list →  manage existing rows
+/api/plugins/osp/location-geos/     →  REST CRUD
+```
+
+`latitude` + `longitude` are stored as `Decimal(max_digits=10, decimal_places=6)`
+matching NetBox's native `Site.latitude`/`Site.longitude` precision. Both are
+optional but must be set together — a `LocationGeo` row with both null acts as
+a placeholder while the operator waits on a survey.
+
+A `marker_color` field selects from a short hue-separated palette so different
+Location classes (admin, server room, field cabinet, manhole) stay visually
+distinct at default zoom.
+
+The map auto-includes every `LocationGeo` with both coords set, filtered by
+site when `?site=` is in the URL. Toggle the **Location markers** overlay in
+the top-right layer control to hide them.
+
+On a `dcim.Location` detail page, the plugin injects a **GPS position** panel
+into the right-hand column with the current value (or a one-click "Set GPS
+position" CTA if none exists).
+
 ## Base map tiles
 
 The map ships with eight base layers. Seven are public online tile servers

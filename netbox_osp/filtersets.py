@@ -2,7 +2,7 @@ import django_filters
 from django.db.models import Q
 
 from netbox.filtersets import NetBoxModelFilterSet
-from dcim.models import Site
+from dcim.models import Location, Site
 
 from .choices import (
     FibreLinkStatusChoices,
@@ -14,6 +14,7 @@ from .choices import (
 )
 from .models import (
     FibreLink,
+    LocationGeo,
     OspCable,
     Splice,
     SpliceClosure,
@@ -142,5 +143,34 @@ class FibreLinkFilterSet(NetBoxModelFilterSet):
             return queryset
         return queryset.filter(
             Q(name__icontains=value)
+            | Q(description__icontains=value)
+        )
+
+
+class LocationGeoFilterSet(NetBoxModelFilterSet):
+    location_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Location.objects.all(), field_name="location",
+    )
+    site_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Site.objects.all(), field_name="location__site",
+    )
+    has_coords = django_filters.BooleanFilter(method="_has_coords")
+
+    class Meta:
+        model = LocationGeo
+        fields = ("id", "location", "marker_color")
+
+    def _has_coords(self, queryset, name, value):
+        if value is True:
+            return queryset.exclude(latitude__isnull=True).exclude(longitude__isnull=True)
+        if value is False:
+            return queryset.filter(Q(latitude__isnull=True) | Q(longitude__isnull=True))
+        return queryset
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(
+            Q(location__name__icontains=value)
             | Q(description__icontains=value)
         )

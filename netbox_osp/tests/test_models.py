@@ -176,6 +176,76 @@ class OspCableNoBoundaryTests(TestCase):
         cable.clean()       # must not raise
 
 
+class LocationGeoTests(TestCase):
+    """Model-level checks for the per-Location GPS side-table."""
+
+    def _make_location(self, name="LG-Loc-1", slug="lg-loc-1"):
+        from dcim.models import Location
+        site = _make_site("LG Site", "lg-site")
+        return Location.objects.create(name=name, slug=slug, site=site)
+
+    def test_lat_lon_must_be_set_together(self):
+        from netbox_osp.models import LocationGeo
+        from decimal import Decimal
+        loc = self._make_location()
+        with self.assertRaises(ValidationError):
+            LocationGeo(location=loc, latitude=Decimal("-31.95"), longitude=None).clean()
+        with self.assertRaises(ValidationError):
+            LocationGeo(location=loc, latitude=None, longitude=Decimal("115.86")).clean()
+        # Both set -> ok
+        LocationGeo(
+            location=loc,
+            latitude=Decimal("-31.95"),
+            longitude=Decimal("115.86"),
+        ).clean()
+        # Both null -> ok (placeholder row)
+        LocationGeo(location=loc).clean()
+
+    def test_lat_out_of_range_rejected(self):
+        from netbox_osp.models import LocationGeo
+        from decimal import Decimal
+        loc = self._make_location(name="LG-Loc-2", slug="lg-loc-2")
+        with self.assertRaises(ValidationError) as cm:
+            LocationGeo(
+                location=loc, latitude=Decimal("91"), longitude=Decimal("0"),
+            ).clean()
+        self.assertIn("latitude", cm.exception.message_dict)
+
+    def test_lon_out_of_range_rejected(self):
+        from netbox_osp.models import LocationGeo
+        from decimal import Decimal
+        loc = self._make_location(name="LG-Loc-3", slug="lg-loc-3")
+        with self.assertRaises(ValidationError) as cm:
+            LocationGeo(
+                location=loc, latitude=Decimal("0"), longitude=Decimal("181"),
+            ).clean()
+        self.assertIn("longitude", cm.exception.message_dict)
+
+    def test_one_to_one_uniqueness(self):
+        from netbox_osp.models import LocationGeo
+        from decimal import Decimal
+        loc = self._make_location(name="LG-Loc-4", slug="lg-loc-4")
+        LocationGeo.objects.create(
+            location=loc, latitude=Decimal("-31"), longitude=Decimal("115"),
+        )
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                LocationGeo.objects.create(
+                    location=loc, latitude=Decimal("-32"), longitude=Decimal("116"),
+                )
+
+    def test_has_coords_property(self):
+        from netbox_osp.models import LocationGeo
+        from decimal import Decimal
+        loc = self._make_location(name="LG-Loc-5", slug="lg-loc-5")
+        geo = LocationGeo.objects.create(location=loc)
+        self.assertFalse(geo.has_coords)
+        geo.latitude = Decimal("-31.95")
+        geo.longitude = Decimal("115.86")
+        geo.save()
+        self.assertTrue(geo.has_coords)
+
+
 class TubeTests(TestCase):
     def test_unique_together_cable_and_number(self):
         cable = _make_cable(cid="TST-UNIQ-001")

@@ -2,19 +2,20 @@ from django import forms
 from netbox.forms import NetBoxModelFilterSetForm
 from utilities.forms.fields import DynamicModelMultipleChoiceField
 
-from dcim.models import Site
+from dcim.models import Location, Site
 from tenancy.models import Tenant
 
 from ..choices import (
     ClosureTypeChoices,
     FibreLinkStatusChoices,
+    LocationMarkerColorChoices,
     OspCableTypeChoices,
     OspStatusChoices,
     SpliceTypeChoices,
     StrandStatusChoices,
 )
 from ..models import (
-    FibreLink, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
+    FibreLink, LocationGeo, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
 )
 
 
@@ -59,3 +60,11 @@ class SpliceFilterForm(NetBoxModelFilterSetForm):
 class FibreLinkFilterForm(NetBoxModelFilterSetForm):
     model = FibreLink
     status = forms.MultipleChoiceField(choices=FibreLinkStatusChoices, required=False)
+
+
+class LocationGeoFilterForm(NetBoxModelFilterSetForm):
+    model = LocationGeo
+    location_id = DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False, label="Location")
+    site_id = DynamicModelMultipleChoiceField(queryset=Site.objects.all(), required=False, label="Site")
+    marker_color = forms.MultipleChoiceField(choices=LocationMarkerColorChoices, required=False)
+    has_coords = forms.NullBooleanField(required=False, label="Has coords")
