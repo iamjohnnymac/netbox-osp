@@ -128,6 +128,166 @@ class FibreTrunk(NetBoxModel):
             raise ValidationError({
                 "fibre_count": "fibre_count must be greater than 0.",
             })
-        # TODO(PR-B): once TrunkBreakout exists, validate that
-        # sum(breakout fibre ranges) <= self.fibre_count. Skipped in PR A
-        # because the through-table doesn't exist yet.
+        # PR B: enforce sum(breakout fibre ranges) <= self.fibre_count.
+        # Guarded by self.pk because clean() runs at form-validation time
+        # before the row exists — there are no breakouts yet on a
+        # brand-new trunk.
+        if self.pk and self.fibre_count is not None:
+            total = sum(
+                (br.fibre_range_end - br.fibre_range_start + 1)
+                for br in self.breakouts.all()
+            )
+            if total > self.fibre_count:
+                raise ValidationError({
+                    "fibre_count": (
+                        f"breakout fibre ranges sum to {total} but "
+                        f"fibre_count={self.fibre_count}. Adjust "
+                        "breakouts or increase fibre_count."
+                    ),
+                })
+
+    @property
+    def fibres_used(self) -> int:
+        """Total fibres allocated to TrunkBreakout children. PR B."""
+        if not self.pk:
+            return 0
+        return sum(
+            (br.fibre_range_end - br.fibre_range_start + 1)
+            for br in self.breakouts.all()
+        )
+
+    @property
+    def fibres_remaining(self) -> int:
+        """Unallocated fibres on this trunk. Floored at 0."""
+        if self.fibre_count is None:
+            return 0
+        return max(self.fibre_count - self.fibres_used, 0)
+
+    @property
+    def fibres_utilization_pct(self) -> float:
+        if not self.fibre_count:
+            return 0.0
+        return round(100 * self.fibres_used / self.fibre_count, 1)
+
+
+class TrunkBreakout(NetBoxModel):
+    """Through-table bridging a FibreTrunk to a native dcim.Cable.
+
+    A 24F MTP trunk → 12F breakout to rack A + 12F breakout to rack B
+    becomes one FibreTrunk parent + two TrunkBreakout rows pointing at
+    the two dcim.Cables already terminated on cassette RearPorts.
+    """
+    trunk = models.ForeignKey(
+        FibreTrunk,
+        related_name="breakouts",
+        on_delete=models.CASCADE,
+        help_text="Parent fibre trunk.",
+    )
+    cable = models.ForeignKey(
+        "dcim.Cable",
+        related_name="osp_trunk_breakouts",
+        on_delete=models.PROTECT,
+        help_text="Native NetBox cable carrying this fibre range. PROTECT "
+                  "so the cable can't be deleted while the breakout still "
+                  "references it.",
+    )
+    fibre_range_start = models.PositiveSmallIntegerField(
+        help_text="1-indexed start fibre position (matches operator "
+                  "cable labelling).",
+    )
+    fibre_range_end = models.PositiveSmallIntegerField(
+        help_text="Inclusive end fibre position. Range size = "
+                  "end - start + 1.",
+    )
+    description = models.CharField(max_length=200, blank=True, default="")
+
+    clone_fields = ("trunk", "fibre_range_start", "fibre_range_end")
+
+    class Meta:
+        ordering = ("trunk", "fibre_range_start")
+        verbose_name = "Trunk Breakout"
+        verbose_name_plural = "Trunk Breakouts"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(fibre_range_start__gte=1),
+                name="trunkbreakout_range_start_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    fibre_range_end__gte=models.F("fibre_range_start"),
+                ),
+                name="trunkbreakout_range_end_gte_start",
+            ),
+        ]
+        unique_together = (
+            ("trunk", "cable"),
+            ("trunk", "fibre_range_start"),
+        )
+
+    def __str__(self):
+        return (
+            f"{self.trunk.cid} "
+            f"[{self.fibre_range_start}-{self.fibre_range_end}] "
+            f"→ {self.cable}"
+        )
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_osp:trunkbreakout", args=[self.pk])
+
+    @property
+    def fibre_count(self) -> int:
+        """Number of fibres covered by this breakout."""
+        if self.fibre_range_start is None or self.fibre_range_end is None:
+            return 0
+        return self.fibre_range_end - self.fibre_range_start + 1
+
+    def clean(self):
+        super().clean()
+        # 1. range_start >= 1 — surface as a form-keyed error before the
+        #    DB constraint fires.
+        if self.fibre_range_start is not None and self.fibre_range_start < 1:
+            raise ValidationError({
+                "fibre_range_start": (
+                    "must be >= 1 (cables are labelled 1-indexed)."
+                ),
+            })
+        # 2. start <= end
+        if (
+            self.fibre_range_start is not None
+            and self.fibre_range_end is not None
+            and self.fibre_range_end < self.fibre_range_start
+        ):
+            raise ValidationError({
+                "fibre_range_end": "must be >= fibre_range_start.",
+            })
+        # 3. end <= parent.fibre_count
+        if self.trunk_id and self.fibre_range_end is not None:
+            trunk_fc = self.trunk.fibre_count
+            if trunk_fc is not None and self.fibre_range_end > trunk_fc:
+                raise ValidationError({
+                    "fibre_range_end": (
+                        f"exceeds parent trunk fibre_count={trunk_fc}."
+                    ),
+                })
+        # 4. no overlap with sibling breakouts on the same trunk.
+        if (
+            self.trunk_id
+            and self.fibre_range_start is not None
+            and self.fibre_range_end is not None
+        ):
+            siblings = TrunkBreakout.objects.filter(trunk_id=self.trunk_id)
+            if self.pk:
+                siblings = siblings.exclude(pk=self.pk)
+            for s in siblings:
+                if not (
+                    self.fibre_range_end < s.fibre_range_start
+                    or self.fibre_range_start > s.fibre_range_end
+                ):
+                    raise ValidationError({
+                        "fibre_range_start": (
+                            f"range [{self.fibre_range_start}-"
+                            f"{self.fibre_range_end}] overlaps with "
+                            f"existing breakout [{s.fibre_range_start}-"
+                            f"{s.fibre_range_end}] on the same trunk."
+                        ),
+                    })

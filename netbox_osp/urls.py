@@ -118,6 +118,20 @@ urlpatterns = [
     path("trunks/<int:pk>/", views.FibreTrunkView.as_view(), name="fibretrunk"),
     path("trunks/<int:pk>/edit/", views.FibreTrunkEditView.as_view(), name="fibretrunk_edit"),
     path("trunks/<int:pk>/delete/", views.FibreTrunkDeleteView.as_view(), name="fibretrunk_delete"),
+    path("trunks/<int:pk>/import-cables/",
+         views.TrunkImportFromCablesView.as_view(), name="fibretrunk_import_cables"),
     path("trunks/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
          name="fibretrunk_changelog", kwargs={"model": models.FibreTrunk}),
+
+    # ----- TrunkBreakout -----
+    path("trunk-breakouts/", views.TrunkBreakoutListView.as_view(), name="trunkbreakout_list"),
+    path("trunk-breakouts/add/", views.TrunkBreakoutEditView.as_view(), name="trunkbreakout_add"),
+    path("trunk-breakouts/edit/", views.TrunkBreakoutBulkEditView.as_view(), name="trunkbreakout_bulk_edit"),
+    path("trunk-breakouts/delete/", views.TrunkBreakoutBulkDeleteView.as_view(), name="trunkbreakout_bulk_delete"),
+    path("trunk-breakouts/import/", views.TrunkBreakoutBulkImportView.as_view(), name="trunkbreakout_import"),
+    path("trunk-breakouts/<int:pk>/", views.TrunkBreakoutView.as_view(), name="trunkbreakout"),
+    path("trunk-breakouts/<int:pk>/edit/", views.TrunkBreakoutEditView.as_view(), name="trunkbreakout_edit"),
+    path("trunk-breakouts/<int:pk>/delete/", views.TrunkBreakoutDeleteView.as_view(), name="trunkbreakout_delete"),
+    path("trunk-breakouts/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+         name="trunkbreakout_changelog", kwargs={"model": models.TrunkBreakout}),
 ]

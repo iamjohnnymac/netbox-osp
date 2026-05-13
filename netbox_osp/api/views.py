@@ -56,3 +56,14 @@ class FibreTrunkViewSet(NetBoxModelViewSet):
     queryset = models.FibreTrunk.objects.prefetch_related("tags").all()
     serializer_class = serializers.FibreTrunkSerializer
     filterset_class = filtersets.FibreTrunkFilterSet
+
+
+class TrunkBreakoutViewSet(NetBoxModelViewSet):
+    queryset = (
+        models.TrunkBreakout.objects
+        .select_related("trunk", "cable")
+        .prefetch_related("tags")
+        .all()
+    )
+    serializer_class = serializers.TrunkBreakoutSerializer
+    filterset_class = filtersets.TrunkBreakoutFilterSet

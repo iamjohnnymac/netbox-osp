@@ -2,7 +2,7 @@ from django import forms
 from netbox.forms import NetBoxModelFilterSetForm
 from utilities.forms.fields import DynamicModelMultipleChoiceField
 
-from dcim.models import Location, Site
+from dcim.models import Cable, Location, Site
 from tenancy.models import Tenant
 
 from ..choices import (
@@ -17,7 +17,7 @@ from ..choices import (
 )
 from ..models import (
     FibreLink, FibreTrunk, LocationGeo, OspCable, Splice, SpliceClosure,
-    SpliceTray, Strand, Tube,
+    SpliceTray, Strand, TrunkBreakout, Tube,
 )
 
 
@@ -77,3 +77,13 @@ class FibreTrunkFilterForm(NetBoxModelFilterSetForm):
     trunk_type = forms.MultipleChoiceField(choices=TrunkTypeChoices, required=False)
     status = forms.MultipleChoiceField(choices=OspStatusChoices, required=False)
     tenant_id = DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, label="Tenant")
+
+
+class TrunkBreakoutFilterForm(NetBoxModelFilterSetForm):
+    model = TrunkBreakout
+    trunk_id = DynamicModelMultipleChoiceField(
+        queryset=FibreTrunk.objects.all(), required=False, label="Trunk",
+    )
+    cable_id = DynamicModelMultipleChoiceField(
+        queryset=Cable.objects.all(), required=False, label="dcim.Cable",
+    )

@@ -14,5 +14,6 @@ router.register("splices", views.SpliceViewSet, basename="splice")
 router.register("links", views.FibreLinkViewSet, basename="fibrelink")
 router.register("location-geos", views.LocationGeoViewSet, basename="locationgeo")
 router.register("trunks", views.FibreTrunkViewSet, basename="fibretrunk")
+router.register("trunk-breakouts", views.TrunkBreakoutViewSet, basename="trunkbreakout")
 
 urlpatterns = router.urls

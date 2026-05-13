@@ -9,6 +9,7 @@ import strawberry_django
 from .types import (
     FibreLinkStrandType,
     FibreLinkType,
+    FibreTrunkBreakoutType,
     FibreTrunkType,
     LocationGeoType,
     OspCableType,
@@ -51,6 +52,9 @@ class NetBoxOspQuery:
 
     osp_fibre_trunk: FibreTrunkType = strawberry_django.field()
     osp_fibre_trunk_list: list[FibreTrunkType] = strawberry_django.field()
+
+    osp_trunk_breakout: FibreTrunkBreakoutType = strawberry_django.field()
+    osp_trunk_breakout_list: list[FibreTrunkBreakoutType] = strawberry_django.field()
 
 
 schema = [NetBoxOspQuery]

@@ -1,0 +1,24 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+
+{% block content %}
+<div class="row">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Trunk Breakout</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Parent trunk</th><td>{{ object.trunk|linkify }}</td></tr>
+                <tr><th>dcim.Cable</th><td>{{ object.cable|linkify }}</td></tr>
+                <tr><th>Fibre range start</th><td>{{ object.fibre_range_start }}</td></tr>
+                <tr><th>Fibre range end</th><td>{{ object.fibre_range_end }}</td></tr>
+                <tr><th>Fibre count</th><td>{{ object.fibre_count }}</td></tr>
+                <tr><th>Description</th><td>{{ object.description|default:"&mdash;" }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/custom_fields.html' %}
+    </div>
+</div>
+{% endblock %}

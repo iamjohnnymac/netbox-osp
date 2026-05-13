@@ -1,10 +1,11 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from netbox.api.serializers import NetBoxModelSerializer
 
 from ..models import (
     FibreLink, FibreLinkStrand, FibreTrunk, LocationGeo, OspCable, Splice,
-    SpliceClosure, SpliceTray, Strand, Tube,
+    SpliceClosure, SpliceTray, Strand, TrunkBreakout, Tube,
 )
 from ..models._geo import validate_linestring, validate_point
 
@@ -128,6 +129,9 @@ class LocationGeoSerializer(NetBoxModelSerializer):
 
 class FibreTrunkSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_osp-api:fibretrunk-detail")
+    fibres_used = serializers.IntegerField(read_only=True)
+    fibres_remaining = serializers.IntegerField(read_only=True)
+    fibres_utilization_pct = serializers.FloatField(read_only=True)
 
     class Meta:
         model = FibreTrunk
@@ -135,6 +139,7 @@ class FibreTrunkSerializer(NetBoxModelSerializer):
             "id", "url", "display", "cid", "trunk_type", "fibre_count",
             "manufacturer", "length_m", "status", "route", "show_on_map",
             "description", "comments", "tenant",
+            "fibres_used", "fibres_remaining", "fibres_utilization_pct",
             "tags", "custom_fields", "created", "last_updated",
         )
         brief_fields = ("id", "url", "display", "cid", "status")
@@ -143,6 +148,49 @@ class FibreTrunkSerializer(NetBoxModelSerializer):
         if value is not None:
             validate_linestring(value)
         return value
+
+
+class TrunkBreakoutSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_osp-api:trunkbreakout-detail")
+    fibre_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = TrunkBreakout
+        fields = (
+            "id", "url", "display", "trunk", "cable",
+            "fibre_range_start", "fibre_range_end", "fibre_count",
+            "description",
+            "tags", "custom_fields", "created", "last_updated",
+        )
+        brief_fields = (
+            "id", "url", "display", "trunk", "cable",
+            "fibre_range_start", "fibre_range_end",
+        )
+
+    def validate(self, data):
+        """Re-run TrunkBreakout.clean() so REST mutations surface clean
+        400s keyed to the offending field (range start / end / overlap)."""
+        data = super().validate(data)
+        # Build a model instance with the candidate data so .clean() can
+        # run the same sibling-overlap and parent-fibre-count checks the
+        # admin form uses.
+        instance = TrunkBreakout(**{
+            k: v for k, v in data.items()
+            if k in {
+                "trunk", "cable",
+                "fibre_range_start", "fibre_range_end",
+                "description",
+            }
+        })
+        if self.instance is not None:
+            instance.pk = self.instance.pk
+        try:
+            instance.clean()
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            ) from exc
+        return data
 
 
 class FibreLinkStrandSerializer(serializers.ModelSerializer):
