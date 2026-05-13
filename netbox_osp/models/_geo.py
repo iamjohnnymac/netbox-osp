@@ -85,3 +85,73 @@ def site_to_point(site):
     if site is None or site.latitude is None or site.longitude is None:
         return None
     return {"type": "Point", "coordinates": [float(site.longitude), float(site.latitude)]}
+
+
+def point_in_polygon(point, polygon):
+    """Ray-casting point-in-polygon test.
+
+    point   : [lon, lat]   (GeoJSON order, matches our stored convention)
+    polygon : iterable of [lon, lat] vertices forming a ring. We close
+              the ring implicitly (the last vertex does not have to equal
+              the first).
+
+    Edge / vertex behaviour is implementation-defined per the standard
+    ray-casting algorithm — points lying exactly on an edge may be
+    classified either way. For our use (validating cable routes against
+    a generous operator-drawn boundary) that is fine.
+
+    Returns True if the point is strictly inside the polygon, False
+    otherwise. Degenerate polygons (< 3 vertices) always return False.
+    """
+    if not isinstance(point, (list, tuple)) or len(point) < 2:
+        return False
+    if not isinstance(polygon, (list, tuple)) or len(polygon) < 3:
+        return False
+    lon, lat = point[0], point[1]
+    inside = False
+    n = len(polygon)
+    j = n - 1
+    for i in range(n):
+        try:
+            lon_i, lat_i = polygon[i][0], polygon[i][1]
+            lon_j, lat_j = polygon[j][0], polygon[j][1]
+        except (IndexError, TypeError):
+            return False
+        # Standard ray-casting test: count crossings of a horizontal ray
+        # going to the right from the test point.
+        if (lat_i > lat) != (lat_j > lat):
+            # Crossing y; check x coordinate of the edge at lat=lat.
+            x_cross = (lon_j - lon_i) * (lat - lat_i) / (lat_j - lat_i) + lon_i
+            if lon < x_cross:
+                inside = not inside
+        j = i
+    return inside
+
+
+def validate_route_within_boundary(route, boundary):
+    """Validate that every vertex of a GeoJSON LineString lies inside a polygon.
+
+    route    : a GeoJSON LineString dict (or None — skipped silently).
+    boundary : list of [lon, lat] vertices (or falsy — skipped silently).
+
+    Raises ValidationError with the index + coordinates of the first
+    offending vertex. Used by OspCable.clean() when the operator
+    configures PLUGINS_CONFIG['netbox_osp']['plant_boundary'].
+    """
+    if not route or not boundary:
+        return
+    if not isinstance(boundary, (list, tuple)) or len(boundary) < 3:
+        # Defensive: an invalid boundary spec is ignored rather than
+        # bringing the plugin down. The startup log will have warned.
+        return
+    coords = route.get("coordinates") if isinstance(route, dict) else None
+    if not coords:
+        return
+    for i, c in enumerate(coords):
+        if not point_in_polygon(c, boundary):
+            lon = c[0] if isinstance(c, (list, tuple)) and len(c) > 0 else "?"
+            lat = c[1] if isinstance(c, (list, tuple)) and len(c) > 1 else "?"
+            raise ValidationError(
+                f"route vertex {i} at lon={lon}, lat={lat} is outside the "
+                f"configured plant_boundary."
+            )

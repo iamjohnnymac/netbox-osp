@@ -4,6 +4,8 @@ We exercise the small bits of model logic that aren't already covered by
 NetBox's generic CRUD machinery:
     - OspCable.save() computes route_length_m from geometry
     - OspCable.clean() rejects fibre_count vs tube_count * fibres_per_tube
+    - OspCable.clean() enforces PLUGINS_CONFIG['netbox_osp']['plant_boundary']
+      on the cable route when configured, and silently passes when not
     - Tube uniqueness on (cable, number)
     - Strand auto-assigns TIA-598 colour when blank
     - Splice.clean() rejects a strand spliced to itself
@@ -11,6 +13,7 @@ NetBox's generic CRUD machinery:
 """
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.test import override_settings
 
 from utilities.testing import TestCase
 
@@ -108,6 +111,69 @@ class OspCableTests(TestCase):
         )
         # Should not raise.
         cable.clean()
+
+
+# A 1° x 1° square in the [0,0]-[1,1] quadrant used by the boundary tests.
+_BOUND_SQUARE_LON_LAT = [
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [1.0, 1.0],
+    [0.0, 1.0],
+]
+
+
+@override_settings(PLUGINS_CONFIG={"netbox_osp": {"plant_boundary": _BOUND_SQUARE_LON_LAT}})
+class OspCableBoundaryTests(TestCase):
+    """OspCable.clean() should honour PLUGINS_CONFIG['netbox_osp']['plant_boundary']
+    if configured, and pass through silently if not."""
+
+    def test_route_inside_boundary_ok(self):
+        cable = OspCable(
+            cid="TST-BND-IN",
+            fibre_count=24, tube_count=2, fibres_per_tube=12,
+            site_a=_make_site("In1", "in1"),
+            site_b=_make_site("In2", "in2"),
+            route={"type": "LineString", "coordinates": [[0.25, 0.25], [0.75, 0.75]]},
+        )
+        cable.clean()       # must not raise
+
+    def test_route_outside_boundary_raises(self):
+        cable = OspCable(
+            cid="TST-BND-OUT",
+            fibre_count=24, tube_count=2, fibres_per_tube=12,
+            site_a=_make_site("Out1", "out1"),
+            site_b=_make_site("Out2", "out2"),
+            route={"type": "LineString", "coordinates": [[0.5, 0.5], [1.5, 1.5]]},
+        )
+        with self.assertRaises(ValidationError) as cm:
+            cable.clean()
+        # Error is keyed to the route field so the form surfaces it correctly.
+        self.assertIn("route", cm.exception.message_dict)
+
+    def test_no_route_no_validation(self):
+        cable = OspCable(
+            cid="TST-BND-NORT",
+            fibre_count=24, tube_count=2, fibres_per_tube=12,
+            site_a=_make_site("Nr1", "nr1"),
+            site_b=_make_site("Nr2", "nr2"),
+        )
+        cable.clean()       # must not raise
+
+
+@override_settings(PLUGINS_CONFIG={"netbox_osp": {}})
+class OspCableNoBoundaryTests(TestCase):
+    """If no boundary is configured, OspCable.clean() must not enforce one
+    even on wildly out-of-area routes."""
+
+    def test_arbitrary_route_accepted(self):
+        cable = OspCable(
+            cid="TST-NO-BND",
+            fibre_count=24, tube_count=2, fibres_per_tube=12,
+            site_a=_make_site("Nb1", "nb1"),
+            site_b=_make_site("Nb2", "nb2"),
+            route={"type": "LineString", "coordinates": [[-150.0, -85.0], [150.0, 85.0]]},
+        )
+        cable.clean()       # must not raise
 
 
 class TubeTests(TestCase):
