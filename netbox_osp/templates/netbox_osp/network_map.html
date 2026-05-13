@@ -1,0 +1,88 @@
+{% extends 'base/layout.html' %}
+{% load static %}
+
+{% block title %}OSP Network Map{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/leaflet.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/leaflet-geoman.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/markercluster.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong><i class="mdi mdi-map-marker-radius"></i> OSP Network Map</strong>
+            <div id="osp-map-filters" class="d-flex gap-2 align-items-center">
+                <select id="osp-filter-status" class="form-select form-select-sm" style="width:auto" multiple>
+                    <option value="active">Active</option>
+                    <option value="planned">Planned</option>
+                    <option value="installed">Installed</option>
+                    <option value="faulty">Faulty</option>
+                    <option value="retired">Retired</option>
+                </select>
+                <button id="osp-trace-toggle" class="btn btn-sm btn-outline-danger" type="button"
+                        title="Trace plant boundary — click each corner in order, then click Done to copy coords">
+                    <i class="mdi mdi-vector-polyline"></i> Trace
+                </button>
+                <button id="osp-edit-toggle" class="btn btn-sm btn-outline-warning" type="button"
+                        title="Toggle edit mode — drag splice closures, drag cable vertices, save back to NetBox">
+                    <i class="mdi mdi-pencil"></i> Edit
+                </button>
+                <button id="osp-reset-view" class="btn btn-sm btn-outline-secondary">
+                    <i class="mdi mdi-image-filter-center-focus"></i> Reset view
+                </button>
+                <div class="dropdown" id="osp-base-layer-dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false"
+                            title="Choose base map (auto-falls-back to offline when online tiles are unreachable)">
+                        <i class="mdi mdi-layers-outline osp-current-layer-icon"></i>
+                        <span class="osp-current-layer-name">Map</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {# populated by base_layers.js #}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="osp-map" style="height: calc(100vh - 220px); width: 100%;"
+                 data-center-lat="{{ map_center.0 }}"
+                 data-center-lon="{{ map_center.1 }}"
+                 data-zoom="{{ map_zoom }}"
+                 data-csrf-token="{{ csrf_token }}"
+                 data-data-url="{% url 'plugins:netbox_osp:network_map_data' %}"
+                 data-tile-url="{% url 'plugins:netbox_osp:tile_proxy' z=0 x=0 y=0 ext='png' %}"></div>
+        </div>
+        <div class="card-footer text-muted small">
+            <span id="osp-map-stats"></span>
+            &middot; click a cable or marker for details &middot; offline-capable tiles via MBTiles
+        </div>
+    </div>
+</div>
+
+{# Toast shown when auto-fallback kicks in (3 tile errors within 5s on an online layer). #}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div id="osp-offline-toast" class="toast" role="alert" aria-live="polite" aria-atomic="true">
+        <div class="toast-header">
+            <i class="mdi mdi-wifi-off me-2 text-warning"></i>
+            <strong class="me-auto">Map tiles offline</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            Couldn't reach online map tiles &mdash; switched to bundled offline imagery.
+            <button type="button" class="btn btn-sm btn-link p-0 osp-offline-retry">Retry online</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+    <script src="{% static 'netbox_osp/js/leaflet.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/leaflet-geoman.min.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/leaflet.markercluster.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/base_layers.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/network_map.js' %}"></script>
+{% endblock %}

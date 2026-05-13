@@ -1,0 +1,120 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: py${{ matrix.python }} / NetBox ${{ matrix.netbox }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+        netbox: ["v4.5.10", "v4.6.0"]
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: netbox
+          POSTGRES_PASSWORD: netbox
+          POSTGRES_DB: netbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout netbox-osp
+        uses: actions/checkout@v4
+        with:
+          path: netbox-osp
+
+      - name: Checkout NetBox ${{ matrix.netbox }}
+        uses: actions/checkout@v4
+        with:
+          repository: netbox-community/netbox
+          ref: ${{ matrix.netbox }}
+          path: netbox
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            netbox/requirements.txt
+            netbox-osp/pyproject.toml
+
+      - name: Install NetBox requirements
+        working-directory: netbox
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tblib coverage
+          pip install -r requirements.txt -U
+
+      - name: Install netbox-osp (editable, with test extras)
+        working-directory: netbox-osp
+        run: pip install -e ".[test]"
+
+      - name: Write CI configuration
+        run: |
+          cat > netbox/netbox/netbox/configuration.py <<'EOF'
+          ALLOWED_HOSTS = ["*"]
+          DATABASE = {
+              "ENGINE": "django.db.backends.postgresql",
+              "NAME": "netbox", "USER": "netbox", "PASSWORD": "netbox",
+              "HOST": "localhost", "PORT": "5432",
+          }
+          REDIS = {
+              "tasks":   {"HOST": "localhost", "PORT": 6379, "DATABASE": 0, "SSL": False},
+              "caching": {"HOST": "localhost", "PORT": 6379, "DATABASE": 1, "SSL": False},
+          }
+          SECRET_KEY = "ci-only-do-not-use-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          PLUGINS = ["netbox_osp"]
+          PLUGINS_CONFIG = {"netbox_osp": {}}
+          EOF
+
+      - name: Check for missing migrations
+        working-directory: netbox
+        env:
+          DEVELOPER: "true"
+        run: python netbox/manage.py makemigrations --check --dry-run netbox_osp
+
+      - name: Run tests
+        working-directory: netbox
+        run: |
+          coverage run --source=../netbox-osp/netbox_osp \
+            netbox/manage.py test netbox_osp -v 2
+          coverage xml -o ../netbox-osp/coverage.xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python == '3.13' && matrix.netbox == 'v4.6.0'
+        continue-on-error: true
+        uses: codecov/codecov-action@v5
+        with:
+          files: netbox-osp/coverage.xml
+          fail_ci_if_error: false

@@ -1,0 +1,70 @@
+# Data model
+
+All geometry is stored as GeoJSON in WGS84 with `[lon, lat]` order
+(RFC 7946). Conversion to Leaflet's `[lat, lon]` happens at the JS
+boundary only.
+
+## Relationships
+
+```
+dcim.Site                                       dcim.Manufacturer
+  |  |                                                |
+  |  +--< OspCable >-----------< Tube >-----< Strand --+
+  |          (route GeoJSON)         |          |
+  |                                  +--------- |
+  |                                             +--> dcim.Cable
+  |                                             |    (Strand.cable_link, optional)
+  |                                             |
+  +--< SpliceClosure >--< SpliceTray >--< Splice >--+
+            (Point)                       (strand_a, strand_b)
+
+  FibreLink >--< FibreLinkStrand >--< Strand
+        (loss budget, status)         (ordered hops)
+```
+
+## Models
+
+### `OspCable`
+A physical fibre cable run between two `dcim.Site`s.
+Key fields: `cid`, `type`, `status`, `install_method`, `fibre_count`,
+`tube_count`, `fibres_per_tube`, `length_m`, `attenuation_db_per_km`,
+`site_a`, `site_b`, `tenant`, `manufacturer`, `route` (GeoJSON
+LineString), `route_length_m` (auto-computed on save).
+Constraint: `fibre_count == tube_count * fibres_per_tube`.
+
+### `Tube`
+A buffer tube inside an `OspCable`. Unique on `(cable, number)`. Colour
+defaults to TIA-598-C order if unset.
+
+### `Strand`
+A single fibre strand. Unique on `(cable, position)`. Colour and tube
+auto-assigned from `position`. The optional `cable_link` FK to
+`dcim.Cable` bridges to the legacy strand-as-cable model so existing
+patch-panel termination data still works.
+Termination is via generic FKs (`a_termination`, `b_termination`) to
+patch-panel front-ports.
+
+### `SpliceClosure`
+A physical splice enclosure (dome / inline / pedestal / handhole /
+wall-mount / aerial). Located at a `dcim.Site` + optional `dcim.Location`
+and a GeoJSON `location_point`. Tracks `capacity_splices` for utilisation.
+
+### `SpliceTray`
+A tray inside a closure. Unique on `(closure, number)`. Holds splices.
+
+### `Splice`
+A fusion or mechanical splice joining `strand_a` and `strand_b`.
+Constraint: `strand_a != strand_b` (no self-splice). Stores
+`loss_db`, `spliced_date`, `spliced_by`, `otdr_trace_url`.
+
+### `FibreLink`
+A logical end-to-end link with two generic-FK terminations
+(`a_termination`, `b_termination`), one or more `strands` chained via
+`FibreLinkStrand` hops, and a `target_loss_budget_db`.
+Computed properties: `strand_loss_db`, `splice_loss_db`,
+`connector_total_loss_db`, `total_loss_db`, `loss_budget_pct`,
+`loss_budget_band` (ok / warn / fail).
+
+### `FibreLinkStrand`
+Through-table assigning a `Strand` to a `FibreLink` at a given
+`position`. Unique on `(link, position)` and `(link, strand)`.

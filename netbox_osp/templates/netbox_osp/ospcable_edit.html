@@ -1,0 +1,62 @@
+{% extends 'generic/object_edit.html' %}
+{% load static %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/leaflet.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/leaflet-geoman.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block form %}
+    {{ block.super }}
+    <div class="card mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Route editor</h5>
+            <div class="dropdown" id="osp-base-layer-dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false"
+                        title="Choose base map (auto-falls-back to offline when online tiles are unreachable)">
+                    <i class="mdi mdi-layers-outline osp-current-layer-icon"></i>
+                    <span class="osp-current-layer-name">Map</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {# populated by base_layers.js #}
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small">
+                Draw a polyline between the two sites. The polyline is saved as a
+                GeoJSON LineString in the <code>route</code> field. Toggle to JSON-edit
+                mode if you want to paste a precise geometry.
+            </p>
+            <div id="osp-route-editor" style="height: 480px;"
+                 data-route-input-id="id_route"
+                 data-tile-url="{% url 'plugins:netbox_osp:tile_proxy' z=0 x=0 y=0 ext='png' %}"></div>
+        </div>
+    </div>
+
+    {# Toast shown when auto-fallback kicks in on the cable edit map. #}
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div id="osp-offline-toast" class="toast" role="alert" aria-live="polite" aria-atomic="true">
+            <div class="toast-header">
+                <i class="mdi mdi-wifi-off me-2 text-warning"></i>
+                <strong class="me-auto">Map tiles offline</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Couldn't reach online map tiles &mdash; switched to bundled offline imagery.
+                <button type="button" class="btn btn-sm btn-link p-0 osp-offline-retry">Retry online</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'netbox_osp/js/leaflet.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/leaflet-geoman.min.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/base_layers.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/route_editor.js' %}"></script>
+{% endblock %}

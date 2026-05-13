@@ -1,0 +1,28 @@
+{% load helpers %}
+<div class="card">
+    <h5 class="card-header">
+        <i class="mdi mdi-map-marker-radius"></i> OSP Connectivity
+    </h5>
+    <div class="card-body">
+        <p class="text-muted small">
+            This site is an endpoint of <strong>{{ cable_count }}</strong> OSP cable{{ cable_count|pluralize }}.
+            <a href="{% url 'plugins:netbox_osp:network_map' %}?site={{ site.pk }}">
+                Open in network map &raquo;
+            </a>
+        </p>
+        <table class="table table-sm">
+            <thead><tr><th>Cable</th><th>Type</th><th>Status</th><th>Far end</th><th>Length (m)</th></tr></thead>
+            <tbody>
+                {% for c in cables %}
+                    <tr>
+                        <td>{{ c|linkify }}</td>
+                        <td>{{ c.get_type_display }}</td>
+                        <td>{% badge c.get_status_display bg_color=c.get_status_color %}</td>
+                        <td>{% if c.site_a == site %}{{ c.site_b|linkify }}{% else %}{{ c.site_a|linkify }}{% endif %}</td>
+                        <td>{{ c.effective_length_m }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

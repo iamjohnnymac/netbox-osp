@@ -1,0 +1,128 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load static %}
+{% load render_table from django_tables2 %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/leaflet.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">OSP Cable</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Cable ID</th><td>{{ object.cid }}</td></tr>
+                <tr><th>Type</th><td>{% badge object.get_type_display bg_color=object.get_type_color %}</td></tr>
+                <tr><th>Status</th><td>{% badge object.get_status_display bg_color=object.get_status_color %}</td></tr>
+                <tr><th>Install method</th><td>{{ object.get_install_method_display|default:"&mdash;" }}</td></tr>
+                <tr><th>Site A</th><td>{{ object.site_a|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Site B</th><td>{{ object.site_b|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Tenant</th><td>{{ object.tenant|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Manufacturer</th><td>{{ object.manufacturer|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Part number</th><td>{{ object.part_number|default:"&mdash;" }}</td></tr>
+                <tr><th>Installed</th><td>{{ object.installed_date|default:"&mdash;" }}</td></tr>
+                <tr><th>Description</th><td>{{ object.description|default:"&mdash;" }}</td></tr>
+            </table>
+        </div>
+        <div class="card mt-3">
+            <h5 class="card-header">Fibre Construction</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Fibre count</th><td>{{ object.fibre_count }}</td></tr>
+                <tr><th>Tube count</th><td>{{ object.tube_count }}</td></tr>
+                <tr><th>Fibres per tube</th><td>{{ object.fibres_per_tube }}</td></tr>
+                <tr><th>Strands in use</th><td>{{ strand_in_use_count }} / {{ object.fibre_count }}</td></tr>
+                <tr><th>Operator length (m)</th><td>{{ object.length_m|default:"&mdash;" }}</td></tr>
+                <tr><th>Route length (m)</th><td>{{ object.route_length_m|default:"&mdash;" }}</td></tr>
+                <tr><th>Effective length (m)</th><td><strong>{{ object.effective_length_m }}</strong></td></tr>
+                <tr><th>Attenuation (dB/km)</th><td>{{ object.attenuation_db_per_km }}</td></tr>
+                <tr><th>Strand loss (dB)</th><td>{{ object.loss_db|floatformat:3 }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Route</h5>
+            {{ object.route|json_script:"osp-route-data" }}
+            <div id="osp-minimap" style="height: 360px;"
+                 data-site-a-lat="{{ object.site_a.latitude|default_if_none:"" }}"
+                 data-site-a-lon="{{ object.site_a.longitude|default_if_none:"" }}"
+                 data-site-a-name="{{ object.site_a.name|default:"" }}"
+                 data-site-b-lat="{{ object.site_b.latitude|default_if_none:"" }}"
+                 data-site-b-lon="{{ object.site_b.longitude|default_if_none:"" }}"
+                 data-site-b-name="{{ object.site_b.name|default:"" }}"
+                 data-tile-url="{% url 'plugins:netbox_osp:tile_proxy' z=0 x=0 y=0 ext='png' %}"></div>
+        </div>
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/comments.html' %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        <div class="card">
+            <h5 class="card-header">Tubes</h5>
+            {% render_table tube_table 'inc/table.html' %}
+        </div>
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        <div class="card">
+            <h5 class="card-header">Strands</h5>
+            {% render_table strand_table 'inc/table.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'netbox_osp/js/leaflet.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const el = document.getElementById('osp-minimap');
+            if (!el) return;
+            // Django's |json_script template tag drops a <script type="application/json">
+            // with valid JSON inside (avoiding the Python-repr single-quote issue
+            // we'd hit by interpolating the dict as a data attribute).
+            const routeScript = document.getElementById('osp-route-data');
+            const route = routeScript ? JSON.parse(routeScript.textContent) : null;
+            const tileUrlSpec = el.dataset.tileUrl.replace('/0/0/0.png', '/{z}/{x}/{y}.png');
+            const map = L.map(el, { attributionControl: false, maxZoom: 18 });
+            L.tileLayer(tileUrlSpec, { maxNativeZoom: 16, maxZoom: 18 }).addTo(map);
+
+            const layers = [];
+            const aLat = parseFloat(el.dataset.siteALat);
+            const aLon = parseFloat(el.dataset.siteALon);
+            const bLat = parseFloat(el.dataset.siteBLat);
+            const bLon = parseFloat(el.dataset.siteBLon);
+            if (!Number.isNaN(aLat) && !Number.isNaN(aLon)) {
+                layers.push(L.marker([aLat, aLon]).bindPopup(el.dataset.siteAName).addTo(map));
+            }
+            if (!Number.isNaN(bLat) && !Number.isNaN(bLon)) {
+                layers.push(L.marker([bLat, bLon]).bindPopup(el.dataset.siteBName).addTo(map));
+            }
+            if (route && route.coordinates) {
+                const latlngs = route.coordinates.map(c => [c[1], c[0]]);
+                const line = L.polyline(latlngs, { color: '#ff8c00', weight: 4 }).addTo(map);
+                layers.push(line);
+            } else if (layers.length === 2) {
+                const line = L.polyline(
+                    [[aLat, aLon], [bLat, bLon]],
+                    { color: '#888', weight: 2, dashArray: '6,6' }
+                ).addTo(map);
+                layers.push(line);
+            }
+
+            if (layers.length) {
+                const group = L.featureGroup(layers);
+                map.fitBounds(group.getBounds().pad(0.2));
+            } else {
+                map.setView([0.0, 0.0], 2);
+            }
+        });
+    </script>
+{% endblock %}

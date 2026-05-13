@@ -1,0 +1,91 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load static %}
+{% load render_table from django_tables2 %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/leaflet.css' %}">
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Splice Closure</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Name</th><td>{{ object.name }}</td></tr>
+                <tr><th>Type</th><td>{% badge object.get_closure_type_display bg_color=object.get_closure_type_color %}</td></tr>
+                <tr><th>Status</th><td>{% badge object.get_status_display bg_color=object.get_status_color %}</td></tr>
+                <tr><th>Manufacturer</th><td>{{ object.manufacturer|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Model</th><td>{{ object.model|default:"&mdash;" }}</td></tr>
+                <tr><th>Site</th><td>{{ object.site|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Location</th><td>{{ object.location|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Elevation (m)</th><td>{{ object.elevation_m|default:"&mdash;" }}</td></tr>
+                <tr><th>Installed</th><td>{{ object.installed_date|default:"&mdash;" }}</td></tr>
+            </table>
+        </div>
+        <div class="card mt-3">
+            <h5 class="card-header">Utilization</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Capacity</th><td>{{ object.capacity_splices }} splices</td></tr>
+                <tr><th>Used</th><td>{{ object.used_splices }}</td></tr>
+                <tr>
+                    <th>Utilization</th>
+                    <td>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar bg-info" role="progressbar"
+                                 style="width: {{ object.utilization_pct }}%;">
+                                {{ object.utilization_pct }}%
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Location</h5>
+            <div id="osp-closure-map" style="height: 360px;"
+                 data-name="{{ object.name }}"
+                 data-tile-url="{% url 'plugins:netbox_osp:tile_proxy' z=0 x=0 y=0 ext='png' %}"></div>
+            {{ object.location_point|json_script:"osp-closure-point-data" }}
+        </div>
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/comments.html' %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        <div class="card">
+            <h5 class="card-header">Splice Trays</h5>
+            {% render_table tray_table 'inc/table.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'netbox_osp/js/leaflet.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const el = document.getElementById('osp-closure-map');
+            if (!el) return;
+            const ptScript = document.getElementById('osp-closure-point-data');
+            const point = ptScript ? JSON.parse(ptScript.textContent) : null;
+            const tileUrl = el.dataset.tileUrl.replace('/0/0/0.png', '/{z}/{x}/{y}.png');
+            const map = L.map(el, { attributionControl: false, maxZoom: 18 });
+            L.tileLayer(tileUrl, { maxNativeZoom: 16, maxZoom: 18 }).addTo(map);
+            if (point && point.coordinates) {
+                const latlng = [point.coordinates[1], point.coordinates[0]];
+                L.marker(latlng).bindPopup(el.dataset.name).addTo(map);
+                map.setView(latlng, 14);
+            } else {
+                map.setView([0.0, 0.0], 2);
+            }
+        });
+    </script>
+{% endblock %}

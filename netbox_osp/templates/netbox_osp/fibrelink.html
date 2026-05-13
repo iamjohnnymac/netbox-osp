@@ -1,0 +1,97 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load static %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Fibre Link</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Name</th><td>{{ object.name }}</td></tr>
+                <tr><th>Status</th><td>{% badge object.get_status_display bg_color=object.get_status_color %}</td></tr>
+                <tr><th>Strands</th><td>{{ object.strand_count }}</td></tr>
+                <tr><th>A termination</th><td>{{ object.a_termination|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>B termination</th><td>{{ object.b_termination|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Description</th><td>{{ object.description|default:"&mdash;" }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Loss budget</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Strand loss (dB)</th><td>{{ object.strand_loss_db|floatformat:3 }}</td></tr>
+                <tr><th>Splice loss (dB)</th><td>{{ object.splice_loss_db|floatformat:3 }}</td></tr>
+                <tr><th>Connector loss (dB)</th><td>{{ object.connector_total_loss_db|floatformat:3 }} ({{ object.connectors_per_end }} × 2 × {{ object.connector_loss_db }})</td></tr>
+                <tr><th>Total loss (dB)</th><td><strong>{{ object.total_loss_db|floatformat:3 }}</strong></td></tr>
+                <tr><th>Target budget (dB)</th><td>{{ object.target_loss_budget_db|floatformat:3 }}</td></tr>
+                <tr>
+                    <th>Budget</th>
+                    <td>
+                        {% if object.loss_budget_band == "ok" %}
+                            {% with cls="bg-success" %}
+                            <div class="progress" style="height: 22px;">
+                                <div class="progress-bar {{ cls }}" role="progressbar"
+                                     style="width: {{ object.loss_budget_pct|floatformat:1 }}%;">
+                                    {{ object.loss_budget_pct|floatformat:1 }}% of budget
+                                </div>
+                            </div>
+                            {% endwith %}
+                        {% elif object.loss_budget_band == "warn" %}
+                            <div class="progress" style="height: 22px;">
+                                <div class="progress-bar bg-warning" role="progressbar"
+                                     style="width: {{ object.loss_budget_pct|floatformat:1 }}%;">
+                                    {{ object.loss_budget_pct|floatformat:1 }}% of budget
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="progress" style="height: 22px;">
+                                <div class="progress-bar bg-danger" role="progressbar"
+                                     style="width: 100%;">
+                                    {{ object.loss_budget_pct|floatformat:1 }}% — OVER BUDGET
+                                </div>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/comments.html' %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        <div class="card">
+            <h5 class="card-header">Hop-by-hop trace</h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr><th>#</th><th>Strand</th><th>Cable</th><th>Length (m)</th><th>Loss (dB)</th><th>Splice → next</th></tr>
+                </thead>
+                <tbody>
+                    {% for strand, splice in hops %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ strand|linkify }}</td>
+                            <td>{{ strand.cable|linkify }}</td>
+                            <td>{{ strand.cable.effective_length_m }}</td>
+                            <td>{{ strand.loss_db|floatformat:3 }}</td>
+                            <td>
+                                {% if splice %}{{ splice|linkify }} ({{ splice.loss_db|floatformat:3 }} dB){% else %}&mdash;{% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-muted">No strands assigned to this link yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

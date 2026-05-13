@@ -1,20 +1,25 @@
-"""netbox-osp v0.0.1 — name placeholder.
+from netbox.plugins import PluginConfig
 
-This is a name-reservation release on PyPI. It is NOT a functional
-NetBox plugin. The real netbox-osp plugin is in active development.
 
-See https://github.com/iamjohnnymac/netbox-osp for status and the
-first usable release (v0.1.0).
-"""
+class NetBoxOspConfig(PluginConfig):
+    name = "netbox_osp"
+    verbose_name = "NetBox OSP"
+    description = "Outside-plant fibre management — cables, splice closures, fibre links with loss budgets, and an offline-capable Leaflet plant map."
+    version = "0.1.0.dev0"
+    author = "John McKenzie"
+    author_email = "33052970+iamjohnnymac@users.noreply.github.com"
+    base_url = "osp"
+    min_version = "4.5.0"
+    max_version = "4.6.99"
 
-__version__ = "0.0.1"
+    default_settings = {
+        "default_attenuation_db_per_km": 0.22,
+        "default_splice_loss_db": 0.10,
+        "default_connector_loss_db": 0.30,
+        # World view by default. Override with the lat/lon of your area.
+        "map_default_center": [0.0, 0.0],
+        "map_default_zoom": 2,
+    }
 
-import warnings
 
-warnings.warn(
-    "netbox-osp 0.0.1 is a placeholder release. "
-    "It does not provide any NetBox functionality. "
-    "Wait for v0.1.0 — see https://github.com/iamjohnnymac/netbox-osp",
-    UserWarning,
-    stacklevel=2,
-)
+config = NetBoxOspConfig

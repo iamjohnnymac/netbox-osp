@@ -1,0 +1,30 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load render_table from django_tables2 %}
+
+{% block content %}
+<div class="row">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Splice Tray</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Closure</th><td>{{ object.closure|linkify }}</td></tr>
+                <tr><th>Number</th><td>{{ object.number }}</td></tr>
+                <tr><th>Capacity</th><td>{{ object.capacity }}</td></tr>
+                <tr><th>Used</th><td>{{ object.used }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        {% include 'inc/panels/tags.html' %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        <div class="card">
+            <h5 class="card-header">Splices</h5>
+            {% render_table splice_table 'inc/table.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}

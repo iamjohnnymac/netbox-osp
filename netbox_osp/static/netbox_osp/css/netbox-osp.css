@@ -1,0 +1,227 @@
+/* netbox-osp plugin styles
+   Tweaks to make the Leaflet map and divIcon markers look right on
+   NetBox's dark theme. Variables fall back where NetBox >=4.6 vars
+   are not exposed.
+*/
+
+/* ---- Map containers ---------------------------------------------------- */
+#osp-map,
+#osp-minimap,
+#osp-closure-map,
+#osp-route-editor {
+    position: relative;
+    background: #1a1a1a;
+}
+
+.leaflet-container {
+    /* Prevent the white flash during tile load on the dark theme. */
+    background: #1a1a1a;
+    font-family: inherit;
+    /* Suppress text/image selection while dragging — otherwise some
+       browsers draw a selection rectangle over the imagery. */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Force the "open hand" / "grabbing hand" cursors even when overriding
+   themes have set cursor: default on canvas/divs. */
+.leaflet-grab           { cursor: grab; }
+.leaflet-dragging .leaflet-grab,
+.leaflet-grab:active    { cursor: grabbing; }
+
+/* ---- Site marker ------------------------------------------------------- */
+.osp-site-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #2d3748;            /* dark slate */
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    font-size: 14px;
+    line-height: 1;
+}
+
+.osp-site-icon i {
+    color: #ffffff;
+    font-size: 16px;
+}
+
+/* ---- Splice closure marker -------------------------------------------- */
+.osp-closure-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f5c518;            /* accent yellow */
+    color: #1a1a1a;
+    border: 2px solid rgba(26, 26, 26, 0.6);  /* slightly translucent */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    font-size: 12px;
+    line-height: 1;
+}
+
+.osp-closure-icon i {
+    color: #1a1a1a;
+    font-size: 13px;
+}
+
+/* ---- Popups ------------------------------------------------------------ */
+.leaflet-popup-content-wrapper {
+    background: var(--nbx-color-surface, #2a2a2a);
+    color: #eeeeee;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+
+.leaflet-popup-content {
+    color: #eeeeee;
+    margin: 10px 14px;
+    line-height: 1.45;
+}
+
+.leaflet-popup-content a {
+    color: #6cb8ff;
+}
+
+.leaflet-popup-tip {
+    background: var(--nbx-color-surface, #2a2a2a);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.leaflet-popup-close-button {
+    color: #cccccc !important;
+}
+
+/* ---- Route editor status banner --------------------------------------- */
+.osp-route-editor-status {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono",
+                 "Roboto Mono", Consolas, monospace;
+    font-size: 12px;
+    color: #cccccc;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+}
+
+/* ---- Layer/zoom control tweaks ---------------------------------------- */
+.leaflet-control-layers,
+.leaflet-bar {
+    background: var(--nbx-color-surface, #2a2a2a);
+    color: #eeeeee;
+    border: 1px solid #444444;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+    background: var(--nbx-color-surface, #2a2a2a);
+    color: #eeeeee;
+    border-bottom-color: #444444;
+}
+
+.leaflet-control-layers-expanded {
+    color: #eeeeee;
+    padding: 8px 10px;
+}
+
+.leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: #bbbbbb !important;
+}
+
+.leaflet-control-attribution a {
+    color: #6cb8ff !important;
+}
+
+/* ---- Geoman toolbar fits the dark theme ------------------------------- */
+.leaflet-pm-toolbar .leaflet-pm-icon-polyline,
+.leaflet-pm-toolbar .leaflet-buttons-control-button {
+    background-color: var(--nbx-color-surface, #2a2a2a) !important;
+}
+
+/* ---- Base-layer dropdown ---------------------------------------------- */
+/* Sits next to the Trace / Edit / Reset buttons in the map card header
+   on the network-map page, and to the right of the title in the cable-
+   edit card header. Width is constrained so a long layer name (Esri
+   World Imagery) doesn't stretch the header on small screens. */
+#osp-base-layer-dropdown .dropdown-toggle {
+    min-width: 9rem;
+    text-align: left;
+}
+
+#osp-base-layer-dropdown .dropdown-toggle .osp-current-layer-name {
+    display: inline-block;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+#osp-base-layer-dropdown .dropdown-menu {
+    min-width: 14rem;
+    background: var(--nbx-color-surface, #2a2a2a);
+    border: 1px solid #444444;
+}
+
+#osp-base-layer-dropdown .dropdown-header {
+    color: #9aa0a6;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+
+#osp-base-layer-dropdown .dropdown-item {
+    color: #eeeeee;
+}
+
+#osp-base-layer-dropdown .dropdown-item:hover,
+#osp-base-layer-dropdown .dropdown-item:focus {
+    background: rgba(108, 184, 255, 0.12);
+    color: #ffffff;
+}
+
+#osp-base-layer-dropdown .dropdown-item.active {
+    background: rgba(108, 184, 255, 0.22);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+#osp-base-layer-dropdown .dropdown-item .mdi {
+    color: #6cb8ff;
+}
+
+/* ---- Offline-fallback toast ------------------------------------------- */
+/* Sits at top-right (Bootstrap toast-container default position). Shown
+   once when auto-fallback fires; the user can dismiss or click Retry. */
+#osp-offline-toast {
+    background: var(--nbx-color-surface, #2a2a2a);
+    color: #eeeeee;
+    border: 1px solid #444444;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+}
+
+#osp-offline-toast .toast-header {
+    background: rgba(0, 0, 0, 0.25);
+    color: #eeeeee;
+    border-bottom: 1px solid #444444;
+}
+
+#osp-offline-toast .toast-body {
+    color: #eeeeee;
+}
+
+#osp-offline-toast .osp-offline-retry {
+    color: #6cb8ff;
+    text-decoration: underline;
+    margin-left: 0.25rem;
+}

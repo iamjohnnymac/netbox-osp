@@ -4,28 +4,121 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-osp"
-version = "0.0.1"
-description = "Placeholder release — netbox-osp name reservation. Real v0.1.0 plugin coming soon."
+version = "0.1.0.dev0"
+description = "Outside-plant fibre management for NetBox — cables, splice closures, fibre links with loss budgets, and an offline-capable Leaflet plant map."
 authors = [{ name = "John McKenzie", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
+maintainers = [{ name = "John McKenzie", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-keywords = ["netbox", "netbox-plugin", "osp", "fibre", "fiber", "gis", "placeholder"]
+keywords = ["netbox", "netbox-plugin", "osp", "fibre", "fiber", "gis", "outside-plant", "splice", "leaflet", "mbtiles"]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
     "Framework :: Django",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
     "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Networking",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "coverage>=7.6",
+    "tblib>=3.0",
+]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocs-mermaid2-plugin>=1.2",
+    "mkdocs-git-revision-date-localized-plugin>=1.2",
 ]
 
 [project.urls]
-Homepage   = "https://github.com/iamjohnnymac/netbox-osp"
-Repository = "https://github.com/iamjohnnymac/netbox-osp"
-Issues     = "https://github.com/iamjohnnymac/netbox-osp/issues"
+Homepage      = "https://github.com/iamjohnnymac/netbox-osp"
+Repository    = "https://github.com/iamjohnnymac/netbox-osp"
+Documentation = "https://iamjohnnymac.github.io/netbox-osp/"
+Issues        = "https://github.com/iamjohnnymac/netbox-osp/issues"
+Changelog     = "https://github.com/iamjohnnymac/netbox-osp/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["netbox_osp*"]
+
+[tool.setuptools.package-data]
+netbox_osp = [
+    "templates/**/*.html",
+    "static/**/*",
+    "migrations/*.py",
+]
+
+# ---------------------------------------------------------------------------
+# Ruff (lint + format). Mirrors the config from mature NetBox plugins such
+# as jsenecal/netbox-peering-manager with OSP-specific exclude paths.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [
+    "**/migrations/*.py",
+    "netbox_osp/static/netbox_osp/js/leaflet*.js",
+    "netbox_osp/static/netbox_osp/js/leaflet*.min.js",
+    "netbox_osp/static/netbox_osp/css/leaflet*.css",
+    "netbox_osp/static/netbox_osp/js/**/*.min.js",
+    "netbox_osp/static/netbox_osp/css/**/*.min.css",
+    "**/*.mbtiles",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "DJ",  # flake8-django
+    "EM",  # flake8-errmsg
+    "PIE", # flake8-pie
+    "Q",   # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (formatter handles)
+    "N806",   # `User = get_user_model()` Django idiom
+    "S101",   # assert ok in tests (also per-file)
+    "B008",   # function calls in defaults (Django FK defaults)
+    "DJ001",  # CharField(null=True) — NetBox uses this widely
+    "RET504", # unnecessary assignment before return
+    "SIM108", # ternary not always clearer
+    "A001",   # builtin shadowing — NetBox `id` params
+    "ARG002", # unused method arguments — Django mixins
+    "RUF012", # mutable class attrs — Django ModelForm.Meta.fields
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py"      = ["F401"]
+"**/tests/**"      = ["ARG", "S", "E402", "F841", "B017"]
+"**/migrations/**" = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
