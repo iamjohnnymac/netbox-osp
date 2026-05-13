@@ -1,3 +1,5 @@
+from django.urls import path
+
 from netbox.api.routers import NetBoxRouter
 from . import views
 
@@ -16,4 +18,13 @@ router.register("location-geos", views.LocationGeoViewSet, basename="locationgeo
 router.register("trunks", views.FibreTrunkViewSet, basename="fibretrunk")
 router.register("trunk-breakouts", views.TrunkBreakoutViewSet, basename="trunkbreakout")
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    # PR E — strand trace JSON endpoint. The 'cores' URL fragment is the
+    # operator-facing alias the v0.2.0 plan calls for; internally it
+    # maps to a Strand pk.
+    path(
+        "cores/<int:pk>/trace/",
+        views.CoreTraceView.as_view(),
+        name="core_trace",
+    ),
+]

@@ -138,6 +138,14 @@ class TubeBulkImportView(generic.BulkImportView):
 class StrandView(generic.ObjectView):
     queryset = models.Strand.objects.select_related("cable", "tube", "cable_link").all()
 
+    def get_extra_context(self, request, instance):
+        # The trace_button.html partial is also rendered via the
+        # PluginTemplateExtension for Strand, but embedding it directly on
+        # the Strand detail template guarantees a stable button position
+        # under the attribute table even on installs that disable
+        # template extensions.
+        return {"trace_url": f"/plugins/osp/strands/{instance.pk}/trace/"}
+
 
 class StrandListView(generic.ObjectListView):
     queryset = models.Strand.objects.select_related("cable", "tube").all()
@@ -1336,3 +1344,67 @@ class TileProxyView(LoginRequiredMixin, View):
         resp["ETag"] = f'"{etag}"'
         resp["Cache-Control"] = "public, max-age=31536000, immutable"
         return resp
+
+
+# ============================================================================
+# Visual core tracer (PR E)
+# ============================================================================
+
+class StrandTraceView(LoginRequiredMixin, View):
+    """Render the full-page tracer panel for a `Strand`.
+
+    The HTML page bootstraps with the strand's metadata; JavaScript on
+    the page fetches /api/plugins/osp/cores/<id>/trace/ asynchronously
+    and renders the dagre-d3 graph.
+    """
+    template_name = "netbox_osp/strand_tracer.html"
+
+    def get(self, request, pk):
+        strand = get_object_or_404(models.Strand, pk=pk)
+        return render(request, self.template_name, {
+            "strand": strand,
+            "trace_json_url": f"/api/plugins/osp/cores/{strand.pk}/trace/",
+        })
+
+
+class FrontPortTraceRedirectView(LoginRequiredMixin, View):
+    """Resolve a dcim.FrontPort → the Strand that claims it (via GFK or
+    cable_link bridge), then 302 to /plugins/osp/strands/<id>/trace/.
+
+    Anonymous users hit LoginRequiredMixin's redirect to /login/. A 404
+    on an unmapped FrontPort lets the operator know there's no fibre
+    path indexed against this port yet.
+    """
+
+    def get(self, request, pk):
+        from dcim.models import FrontPort
+        from .tracer import resolve_strand_for_termination
+
+        port = get_object_or_404(FrontPort, pk=pk)
+        strand = resolve_strand_for_termination(port)
+        if strand is None:
+            return HttpResponseNotFound(
+                "No netbox-osp strand claims this FrontPort. Attach the "
+                "strand's a_termination or b_termination first."
+            )
+        return redirect("plugins:netbox_osp:strand_trace", pk=strand.pk)
+
+
+class InterfaceTraceRedirectView(LoginRequiredMixin, View):
+    """Resolve a dcim.Interface → walk one cable hop to a FrontPort →
+    Strand, then 302 to the trace page. Same 404 behaviour as the
+    FrontPort variant when the path isn't fibre-indexed.
+    """
+
+    def get(self, request, pk):
+        from dcim.models import Interface
+        from .tracer import resolve_strand_for_termination
+
+        intf = get_object_or_404(Interface, pk=pk)
+        strand = resolve_strand_for_termination(intf)
+        if strand is None:
+            return HttpResponseNotFound(
+                "No netbox-osp strand reachable from this Interface "
+                "through the patch path."
+            )
+        return redirect("plugins:netbox_osp:strand_trace", pk=strand.pk)

@@ -62,10 +62,27 @@ Per-release NetBox / Python compatibility lives on the
   Slug-keyed `update_or_create`, atomic per cassette, materialises
   `RearPortTemplate` + `FrontPortTemplate` + `PortTemplateMapping`
   rows. `--dry-run` flag for safe inspection.
+- **Visual core tracer** (PR E) — click "Trace this core" on a `Strand`,
+  `dcim.FrontPort`, or `dcim.Interface` detail page to render an
+  end-to-end fibre path as a clickable dagre-d3 graph. Each hop —
+  interface, patch cord, cassette pass-through, MPO/MTP trunk, splice,
+  OSP strand — shows inline loss + length; the summary band above the
+  graph shows total dB used against the strand's parent FibreLink
+  budget (or a configurable default), colour-coded `ok` / `warn` /
+  `fail`. New JSON endpoint at
+  `GET /api/plugins/osp/cores/<strand_id>/trace/` returns the hop list
+  for external tooling. dagre-d3 v0.6.4 (~700 KB minified) ships
+  vendored in `static/netbox_osp/js/dagre-d3.min.js`. Three new
+  `PluginTemplateExtension` subclasses inject the trace button onto
+  `dcim.Interface`, `dcim.FrontPort`, and netbox-osp `Strand` detail
+  pages. New optional config keys under `PLUGINS_CONFIG["netbox_osp"]`:
+  `default_cassette_loss_db` (0.5), `default_patch_cord_loss_db` (0.1),
+  `default_loss_budget_db` (8.0). Zero new migrations — the tracer is
+  read-only over the existing data model.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PRs A, B, C, and D; PR E (visual core tracer) appends to
-this `Unreleased` block once it merges.
+documents PRs A, B, C, D, and E. All five v0.2 features
+landed; v0.2.0 is ready to tag.
 
 ## 0.1.1 — 2026-05-13
 

@@ -51,6 +51,12 @@ urlpatterns = [
     path("strands/<int:pk>/delete/", views.StrandDeleteView.as_view(), name="strand_delete"),
     path("strands/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
          name="strand_changelog", kwargs={"model": models.Strand}),
+    # PR E — visual core tracer.
+    path("strands/<int:pk>/trace/", views.StrandTraceView.as_view(), name="strand_trace"),
+    path("ports/<int:pk>/trace/", views.FrontPortTraceRedirectView.as_view(),
+         name="frontport_trace"),
+    path("interfaces/<int:pk>/trace/", views.InterfaceTraceRedirectView.as_view(),
+         name="interface_trace"),
 
     # ----- SpliceClosure -----
     path("closures/", views.SpliceClosureListView.as_view(), name="spliceclosure_list"),
