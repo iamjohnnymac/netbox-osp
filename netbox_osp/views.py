@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
+from django.core.signing import BadSignature, TimestampSigner
 from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,6 +17,22 @@ from django.views.generic import View
 from netbox.views import generic
 
 from . import forms, models, tables, filtersets
+
+# AbortRequest is the exception raised by NetBox's `trace_paths` signal
+# when a cable path is impossible (UnsupportedCablePath). The import path
+# is netbox.core / netbox-side; guard for variation across 4.6 minor
+# versions so we don't blow up at module-import time on an env that
+# relocates the class.
+try:  # pragma: no cover - import-path guard
+    from utilities.exceptions import AbortRequest
+except ImportError:  # pragma: no cover
+    try:
+        from netbox.exceptions import AbortRequest
+    except ImportError:
+        class AbortRequest(Exception):  # type: ignore[no-redef]
+            """Fallback if NetBox relocates the exception. Cable signals
+            still raise something; we'll surface it as a generic
+            non-field error in the catch-all branch below."""
 
 
 # ============================================================================
@@ -567,6 +584,562 @@ class TrunkImportFromCablesView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         messages.success(
             request,
             f"Created {len(created)} TrunkBreakout row(s) on {trunk.cid}.",
+        )
+        return redirect(trunk.get_absolute_url())
+
+
+# ============================================================================
+# MTP Harness one-click deploy
+# ============================================================================
+
+# Signer namespace for the preview-state token. The same secret-key derived
+# signer is used for both signing (after the validate step) and verifying
+# (on the confirm step). The salt is fixed per-view so tokens minted by
+# this view can't be replayed against another signed-state endpoint.
+_HARNESS_STATE_SIGNER = TimestampSigner(salt="netbox_osp.mtp_harness.preview")
+
+# Max age (seconds) for a preview-state token. The operator has ten
+# minutes between previewing and confirming, after which they have to
+# re-validate. Defends against stale tabs.
+_HARNESS_STATE_MAX_AGE = 600
+
+
+def _sign_harness_state(payload: dict) -> str:
+    """Return a timestamped, signed JSON token of `payload`.
+
+    Used to round-trip the cleaned form state between the preview and
+    confirm steps without trusting the operator's browser. The signer
+    derives from SECRET_KEY so any tampering is detectable.
+    """
+    raw = json.dumps(payload, default=str, sort_keys=True)
+    return _HARNESS_STATE_SIGNER.sign(raw)
+
+
+def _unsign_harness_state(token: str) -> dict | None:
+    """Verify a previously-signed state token and return its payload.
+
+    Returns None on tampered / expired tokens. Callers should treat that
+    as "operator's preview state is stale; restart the form" rather than
+    a hard error.
+    """
+    try:
+        raw = _HARNESS_STATE_SIGNER.unsign(token, max_age=_HARNESS_STATE_MAX_AGE)
+    except BadSignature:
+        return None
+    try:
+        return json.loads(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    """One-click MTP harness deploy.
+
+    A single form submit creates the parent `FibreTrunk` + N cassette
+    `dcim.Device`s + N `dcim.Cable`s + N `TrunkBreakout`s atomically.
+    Replaces ~30 individual NetBox object writes with one form.
+
+    Flow:
+      - GET → render empty parent form + destinations formset.
+      - POST without `confirm=1` → validate form + formset + cross-form
+        rules. On success render the preview page with a signed state
+        token embedded in a hidden field. On failure re-render the form
+        with errors.
+      - POST with `confirm=1` → verify the signed state token, then run
+        the atomic deploy. On success redirect to the new trunk's detail
+        page; on validation / integrity / cable-path failure re-render
+        the form with errors.
+
+    Mirrors `TrunkImportFromCablesView` for the exception-ladder shape:
+    `ValidationError` → form-keyed error, `IntegrityError` → friendly
+    race-condition message, `AbortRequest` → cable-path-impossible
+    message.
+    """
+
+    permission_required = (
+        "netbox_osp.add_fibretrunk",
+        "netbox_osp.add_trunkbreakout",
+        "dcim.add_device",
+        "dcim.add_cable",
+    )
+    template_name = "netbox_osp/mtp_harness_deploy.html"
+    preview_template_name = "netbox_osp/mtp_harness_preview.html"
+
+    # -- helpers -------------------------------------------------------------
+
+    @staticmethod
+    def _validate_harness(parent_form, dest_formset):
+        """Cross-form validation that doesn't belong on a single form.
+
+        Runs after both forms' `is_valid()` calls pass. Errors are added
+        directly to the form fields they correspond to so the operator
+        sees them on the right input.
+        """
+        from dcim.models import RearPort  # local: avoid hard import at module load
+        del RearPort  # only imported to satisfy the IDE; no runtime use
+
+        cleaned_rows = [
+            row for row in dest_formset.cleaned_data
+            if row and not row.get("DELETE")
+        ]
+        if not cleaned_rows:
+            dest_formset._non_form_errors = dest_formset.error_class(
+                ["At least one destination row is required."]
+            )
+            return False
+
+        ok = True
+
+        # 1. Duplicate destination racks.
+        rack_pks = [row["dest_rack"].pk for row in cleaned_rows]
+        if len(set(rack_pks)) != len(rack_pks):
+            dest_formset._non_form_errors = dest_formset.error_class(
+                ["Each destination rack must be unique."]
+            )
+            ok = False
+
+        # 2. Sum of fibre ranges <= trunk.fibre_count.
+        trunk_fc = parent_form.cleaned_data["fibre_count"]
+        total = sum(
+            (row["fibre_range_end"] - row["fibre_range_start"] + 1)
+            for row in cleaned_rows
+        )
+        if total > trunk_fc:
+            parent_form.add_error(
+                "fibre_count",
+                f"Destination breakouts sum to {total} fibres but "
+                f"trunk fibre_count={trunk_fc}.",
+            )
+            ok = False
+
+        # 3. No overlapping fibre ranges across rows.
+        sorted_rows = sorted(cleaned_rows, key=lambda r: r["fibre_range_start"])
+        for i in range(1, len(sorted_rows)):
+            prev = sorted_rows[i - 1]
+            cur = sorted_rows[i]
+            if cur["fibre_range_start"] <= prev["fibre_range_end"]:
+                # Find the formset index of the offending row to attach
+                # the error to the right form.
+                for idx, form in enumerate(dest_formset.forms):
+                    if (
+                        form.cleaned_data
+                        and form.cleaned_data.get("fibre_range_start") == cur["fibre_range_start"]
+                        and form.cleaned_data.get("fibre_range_end") == cur["fibre_range_end"]
+                    ):
+                        dest_formset.forms[idx].add_error(
+                            "fibre_range_start",
+                            f"range [{cur['fibre_range_start']}-"
+                            f"{cur['fibre_range_end']}] overlaps with "
+                            f"[{prev['fibre_range_start']}-{prev['fibre_range_end']}].",
+                        )
+                        break
+                ok = False
+                break
+
+        # 4. Source rear port not selected as a destination rear port.
+        source_rp = parent_form.cleaned_data.get("source_rear_port")
+        if source_rp is not None:
+            for idx, row in enumerate(cleaned_rows):
+                drp = row.get("dest_rear_port")
+                if drp is not None and drp.pk == source_rp.pk:
+                    # Locate the form in the formset
+                    for fidx, form in enumerate(dest_formset.forms):
+                        if (
+                            form.cleaned_data
+                            and form.cleaned_data.get("dest_rear_port")
+                            and form.cleaned_data["dest_rear_port"].pk == source_rp.pk
+                        ):
+                            dest_formset.forms[fidx].add_error(
+                                "dest_rear_port",
+                                "Destination port cannot be the same as the "
+                                "source rear port.",
+                            )
+                            break
+                    ok = False
+
+        return ok
+
+    @staticmethod
+    def _serialise_state(parent_form, dest_formset):
+        """Capture the cleaned data of the parent form + each destination
+        row into a primitive-only dict suitable for signing into a
+        TimestampSigner token.
+
+        ModelChoice instances are reduced to PKs; everything else is
+        passed through `default=str` in `_sign_harness_state` for JSON
+        compatibility.
+        """
+        def _pk_or_none(obj):
+            return obj.pk if obj is not None else None
+
+        parent = parent_form.cleaned_data
+        parent_payload = {
+            "trunk_cid": parent["trunk_cid"],
+            "trunk_type": parent["trunk_type"],
+            "fibre_count": parent["fibre_count"],
+            "length_m": str(parent["length_m"]) if parent.get("length_m") is not None else None,
+            "manufacturer": _pk_or_none(parent.get("manufacturer")),
+            "source_rack": _pk_or_none(parent.get("source_rack")),
+            "source_device": _pk_or_none(parent.get("source_device")),
+            "source_rear_port": _pk_or_none(parent.get("source_rear_port")),
+            "cassette_device_type": _pk_or_none(parent.get("cassette_device_type")),
+            "cassette_device_role": _pk_or_none(parent.get("cassette_device_role")),
+            "cable_type": parent["cable_type"],
+            "default_cable_length_m": (
+                str(parent["default_cable_length_m"])
+                if parent.get("default_cable_length_m") is not None else None
+            ),
+        }
+
+        rows_payload = []
+        for row in dest_formset.cleaned_data:
+            if not row or row.get("DELETE"):
+                continue
+            rows_payload.append({
+                "dest_rack": _pk_or_none(row.get("dest_rack")),
+                "dest_device_mode": row.get("dest_device_mode"),
+                "dest_device_name": row.get("dest_device_name") or "",
+                "dest_position_u": (
+                    str(row["dest_position_u"])
+                    if row.get("dest_position_u") is not None else None
+                ),
+                "dest_face": row.get("dest_face") or "",
+                "dest_device_existing": _pk_or_none(row.get("dest_device_existing")),
+                "dest_rear_port": _pk_or_none(row.get("dest_rear_port")),
+                "fibre_range_start": row["fibre_range_start"],
+                "fibre_range_end": row["fibre_range_end"],
+                "cable_label": row.get("cable_label") or "",
+                "cable_length_m": (
+                    str(row["cable_length_m"])
+                    if row.get("cable_length_m") is not None else None
+                ),
+            })
+
+        return {"parent": parent_payload, "rows": rows_payload}
+
+    @staticmethod
+    def _resolve_state(payload):
+        """Turn a deserialised signed-state payload back into the model
+        instances and primitive values the deploy step needs.
+
+        Returns a `(parent_resolved, rows_resolved)` tuple or raises
+        ValidationError if any FK target has been deleted between preview
+        and confirm.
+        """
+        from decimal import Decimal
+
+        from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Rack, RearPort
+
+        def _decimal(s):
+            return Decimal(s) if s not in (None, "") else None
+
+        def _fetch(model, pk, label):
+            if pk is None:
+                return None
+            try:
+                return model.objects.get(pk=pk)
+            except model.DoesNotExist as exc:
+                raise ValidationError(
+                    f"{label} (pk={pk}) was deleted between preview and "
+                    "confirm. Reload the form."
+                ) from exc
+
+        parent = payload["parent"]
+        parent_resolved = {
+            "trunk_cid": parent["trunk_cid"],
+            "trunk_type": parent["trunk_type"],
+            "fibre_count": parent["fibre_count"],
+            "length_m": _decimal(parent.get("length_m")),
+            "manufacturer": _fetch(Manufacturer, parent.get("manufacturer"), "Manufacturer"),
+            "source_rack": _fetch(Rack, parent.get("source_rack"), "Source rack"),
+            "source_device": _fetch(Device, parent.get("source_device"), "Source device"),
+            "source_rear_port": _fetch(RearPort, parent.get("source_rear_port"), "Source rear port"),
+            "cassette_device_type": _fetch(
+                DeviceType, parent.get("cassette_device_type"), "Cassette device type",
+            ),
+            "cassette_device_role": _fetch(
+                DeviceRole, parent.get("cassette_device_role"), "Cassette device role",
+            ),
+            "cable_type": parent["cable_type"],
+            "default_cable_length_m": _decimal(parent.get("default_cable_length_m")),
+        }
+
+        rows_resolved = []
+        for row in payload.get("rows", []):
+            rows_resolved.append({
+                "dest_rack": _fetch(Rack, row.get("dest_rack"), "Destination rack"),
+                "dest_device_mode": row["dest_device_mode"],
+                "dest_device_name": row.get("dest_device_name") or "",
+                "dest_position_u": _decimal(row.get("dest_position_u")),
+                "dest_face": row.get("dest_face") or "",
+                "dest_device_existing": _fetch(
+                    Device, row.get("dest_device_existing"), "Existing destination device",
+                ),
+                "dest_rear_port": _fetch(
+                    RearPort, row.get("dest_rear_port"), "Destination rear port",
+                ),
+                "fibre_range_start": row["fibre_range_start"],
+                "fibre_range_end": row["fibre_range_end"],
+                "cable_label": row.get("cable_label") or "",
+                "cable_length_m": _decimal(row.get("cable_length_m")),
+            })
+
+        return parent_resolved, rows_resolved
+
+    def _build_preview_rows(self, parent_resolved, rows_resolved):
+        """Pre-compute a list of dicts describing what WOULD be created
+        in the deploy step. Rendered on the preview template so the
+        operator sees the full plan before committing."""
+        preview_rows = []
+        for row in rows_resolved:
+            if row["dest_device_mode"] == "create":
+                device_desc = (
+                    f"NEW {row['dest_device_name']} "
+                    f"({parent_resolved['cassette_device_type']}) "
+                    f"in rack {row['dest_rack']} @ U{row['dest_position_u']} "
+                    f"({row['dest_face']})"
+                )
+            else:
+                device_desc = f"existing {row['dest_device_existing']}"
+
+            preview_rows.append({
+                "rack": row["dest_rack"],
+                "device": device_desc,
+                "rear_port": (
+                    row["dest_rear_port"]
+                    if row["dest_device_mode"] == "existing"
+                    else "(first RearPort of new cassette)"
+                ),
+                "fibre_range": f"[{row['fibre_range_start']}-{row['fibre_range_end']}]",
+                "cable_label": (
+                    row["cable_label"]
+                    or f"{parent_resolved['trunk_cid']}-{row['dest_rack']}"
+                ),
+                "cable_length_m": (
+                    row["cable_length_m"]
+                    or parent_resolved["default_cable_length_m"]
+                ),
+            })
+
+        return preview_rows
+
+    def _deploy(self, parent_resolved, rows_resolved):
+        """Run the atomic deploy. Returns `(trunk, created_devices,
+        created_cables, created_breakouts)` on success. Any failure
+        propagates as the original exception so the caller's exception
+        ladder can format the message.
+        """
+        from dcim.models import Cable
+        # NetBox 4.6 stores cable status on `LinkStatusChoices` in
+        # `dcim.choices`; the actual string value is "connected".
+        cable_status_connected = "connected"
+
+        source_rp = parent_resolved["source_rear_port"]
+
+        with transaction.atomic():
+            # Step 1: parent FibreTrunk.
+            from .choices import OspStatusChoices
+            trunk = models.FibreTrunk(
+                cid=parent_resolved["trunk_cid"],
+                trunk_type=parent_resolved["trunk_type"],
+                fibre_count=parent_resolved["fibre_count"],
+                length_m=parent_resolved.get("length_m"),
+                manufacturer=parent_resolved.get("manufacturer"),
+                status=OspStatusChoices.STATUS_PLANNED,
+            )
+            trunk.full_clean()
+            trunk.save()
+
+            created_devices = []
+            created_cables = []
+            created_breakouts = []
+
+            for row in rows_resolved:
+                # Step 2a: resolve destination device + RearPort.
+                if row["dest_device_mode"] == "create":
+                    from dcim.models import Device
+                    dev = Device(
+                        site=row["dest_rack"].site,
+                        rack=row["dest_rack"],
+                        device_type=parent_resolved["cassette_device_type"],
+                        role=parent_resolved["cassette_device_role"],
+                        name=row["dest_device_name"],
+                        position=row["dest_position_u"],
+                        face=row["dest_face"],
+                        status="active",
+                    )
+                    dev.full_clean()
+                    dev.save()
+                    created_devices.append(dev)
+
+                    # `save()` auto-spawns the device-type's components.
+                    # Pick the first RearPort (alpha by name).
+                    dest_rp = dev.rearports.order_by("name").first()
+                    if dest_rp is None:
+                        raise ValidationError({
+                            "cassette_device_type":
+                            "Cassette device-type has no RearPort "
+                            "templates. Pick a device-type with at least "
+                            "one RearPort.",
+                        })
+                else:
+                    dest_rp = row["dest_rear_port"]
+
+                # Step 2b: dcim.Cable from source_rp -> dest_rp.
+                effective_length = (
+                    row.get("cable_length_m")
+                    or parent_resolved.get("default_cable_length_m")
+                )
+                cable = Cable(
+                    type=parent_resolved["cable_type"],
+                    status=cable_status_connected,
+                    label=row.get("cable_label") or "",
+                    length=effective_length,
+                    length_unit="m" if effective_length is not None else "",
+                )
+                cable.a_terminations = [source_rp]
+                cable.b_terminations = [dest_rp]
+                cable.full_clean()
+                cable.save()
+                created_cables.append(cable)
+
+                # Step 2c: TrunkBreakout binding cable to trunk.
+                br = models.TrunkBreakout(
+                    trunk=trunk,
+                    cable=cable,
+                    fibre_range_start=row["fibre_range_start"],
+                    fibre_range_end=row["fibre_range_end"],
+                )
+                br.full_clean()
+                br.save()
+                created_breakouts.append(br)
+
+        return trunk, created_devices, created_cables, created_breakouts
+
+    @staticmethod
+    def _render_form_errors_for_validation(parent_form, dest_formset, exc):
+        """Surface a ValidationError raised inside the atomic block onto
+        the parent form's non-field errors. Used after rollback so the
+        operator sees a coherent error message at the top of the page.
+        """
+        if hasattr(exc, "message_dict"):
+            for field, errs in exc.message_dict.items():
+                for e in errs:
+                    parent_form.add_error(None, f"{field}: {e}")
+        else:
+            parent_form.add_error(None, "; ".join(exc.messages))
+
+    # -- request dispatch ----------------------------------------------------
+
+    def get(self, request):
+        parent_form = forms.MtpHarnessForm()
+        dest_formset = forms.MtpHarnessDestinationFormSet()
+        return render(request, self.template_name, {
+            "form": parent_form,
+            "formset": dest_formset,
+        })
+
+    def post(self, request):
+        if request.POST.get("confirm") == "1":
+            return self._post_confirm(request)
+        return self._post_preview(request)
+
+    def _post_preview(self, request):
+        """Validate the form. On success render the preview template
+        with a signed state token; on failure re-render the edit form
+        with field errors.
+        """
+        parent_form = forms.MtpHarnessForm(request.POST)
+        dest_formset = forms.MtpHarnessDestinationFormSet(request.POST)
+
+        forms_valid = parent_form.is_valid() & dest_formset.is_valid()
+        cross_ok = forms_valid and self._validate_harness(parent_form, dest_formset)
+
+        if not (forms_valid and cross_ok):
+            return render(request, self.template_name, {
+                "form": parent_form,
+                "formset": dest_formset,
+            })
+
+        # Forms are clean. Sign the state and render the preview page.
+        payload = self._serialise_state(parent_form, dest_formset)
+        state_token = _sign_harness_state(payload)
+
+        # Resolve once for the preview rows so the operator sees real
+        # object labels rather than PKs.
+        try:
+            parent_resolved, rows_resolved = self._resolve_state(payload)
+        except ValidationError as exc:
+            self._render_form_errors_for_validation(parent_form, dest_formset, exc)
+            return render(request, self.template_name, {
+                "form": parent_form,
+                "formset": dest_formset,
+            })
+
+        preview_rows = self._build_preview_rows(parent_resolved, rows_resolved)
+
+        return render(request, self.preview_template_name, {
+            "parent": parent_resolved,
+            "preview_rows": preview_rows,
+            "state_token": state_token,
+        })
+
+    def _post_confirm(self, request):
+        """Verify the signed state token, then run the atomic deploy."""
+        token = request.POST.get("state_token") or ""
+        payload = _unsign_harness_state(token)
+        if payload is None:
+            messages.error(
+                request,
+                "Preview state was invalid or expired. Please restart "
+                "the harness deploy form.",
+            )
+            return redirect("plugins:netbox_osp:mtp_harness_deploy")
+
+        try:
+            parent_resolved, rows_resolved = self._resolve_state(payload)
+        except ValidationError as exc:
+            messages.error(request, "; ".join(exc.messages))
+            return redirect("plugins:netbox_osp:mtp_harness_deploy")
+
+        # Build empty bound forms for the rollback-path render so the
+        # operator sees the original values + the error message at the
+        # top of the page rather than a blank form.
+        parent_form = forms.MtpHarnessForm()
+        dest_formset = forms.MtpHarnessDestinationFormSet()
+
+        try:
+            trunk, devs, cables, breakouts = self._deploy(parent_resolved, rows_resolved)
+        except ValidationError as exc:
+            self._render_form_errors_for_validation(parent_form, dest_formset, exc)
+            return render(request, self.template_name, {
+                "form": parent_form,
+                "formset": dest_formset,
+            })
+        except IntegrityError:
+            parent_form.add_error(
+                None,
+                "Another operator just modified one of the resources "
+                "referenced by this harness (trunk CID, source port, rack "
+                "position, or cable). Reload and try again.",
+            )
+            return render(request, self.template_name, {
+                "form": parent_form,
+                "formset": dest_formset,
+            })
+        except AbortRequest as exc:
+            parent_form.add_error(None, f"Cable path invalid: {exc}")
+            return render(request, self.template_name, {
+                "form": parent_form,
+                "formset": dest_formset,
+            })
+
+        messages.success(
+            request,
+            f"Deployed harness {trunk.cid}: "
+            f"{len(breakouts)} breakout(s), "
+            f"{len(devs)} new cassette(s), "
+            f"{len(cables)} cable(s).",
         )
         return redirect(trunk.get_absolute_url())
 

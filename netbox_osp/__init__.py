@@ -19,6 +19,9 @@ class NetBoxOspConfig(PluginConfig):
         # World view by default. Override with the lat/lon of your area.
         "map_default_center": [0.0, 0.0],
         "map_default_zoom": 2,
+        # Default Cable.type chosen by the MTP harness one-click deploy
+        # form. Override per-install if the plant is mostly multimode.
+        "default_cable_type": "smf",
     }
 
 

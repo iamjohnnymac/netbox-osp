@@ -83,6 +83,10 @@ menu = PluginMenu(
                 link_text="Trunk Breakouts",
                 buttons=trunkbreakout_buttons,
             ),
+            PluginMenuItem(
+                link="plugins:netbox_osp:mtp_harness_deploy",
+                link_text="Deploy MTP Harness",
+            ),
         )),
         ("Splices", (
             PluginMenuItem(

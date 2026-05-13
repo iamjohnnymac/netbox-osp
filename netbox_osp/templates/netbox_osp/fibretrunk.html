@@ -63,6 +63,10 @@
                    class="btn btn-sm btn-outline-primary ms-2">
                     <i class="mdi mdi-upload"></i> Import from Cables
                 </a>
+                <a href="{% url 'plugins:netbox_osp:mtp_harness_deploy' %}"
+                   class="btn btn-sm btn-success ms-2">
+                    <i class="mdi mdi-rocket-launch"></i> Deploy MTP Harness
+                </a>
             </h5>
             {% render_table breakout_table 'inc/table.html' %}
         </div>
