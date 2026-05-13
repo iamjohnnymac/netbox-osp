@@ -675,9 +675,6 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         directly to the form fields they correspond to so the operator
         sees them on the right input.
         """
-        from dcim.models import RearPort  # local: avoid hard import at module load
-        del RearPort  # only imported to satisfy the IDE; no runtime use
-
         cleaned_rows = [
             row for row in dest_formset.cleaned_data
             if row and not row.get("DELETE")

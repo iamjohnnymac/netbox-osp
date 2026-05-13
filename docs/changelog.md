@@ -41,10 +41,16 @@ Per-release NetBox / Python compatibility lives on the
   bind of unbound `dcim.Cable`s to fibre ranges.
 - **REST + GraphQL** for `TrunkBreakout`.
 - **CSV bulk import** keyed by `trunk_cid` + `cable_label`.
+- **MTP harness one-click deploy form** at
+  `/plugins/osp/trunks/deploy-harness/` — a single form submit creates
+  the parent `FibreTrunk` + N cassette `dcim.Device`s + N
+  `dcim.Cable`s + N `TrunkBreakout` rows atomically. Two-step
+  preview/confirm flow with a `TimestampSigner`-signed state token.
+  Replaces ~30 individual NetBox object writes with one form.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PRs A and B; subsequent PRs (MtpHarness, cassette device-type
-JSON, visual core tracer) append to this `Unreleased` block.
+documents PRs A, B and C; subsequent PRs (cassette device-type JSON,
+visual core tracer) append to this `Unreleased` block.
 
 ## 0.1.1 — 2026-05-13
 

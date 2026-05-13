@@ -69,17 +69,34 @@ Per-release NetBox / Python compatibility lives in
   surface, and the import-cables wizard view (GET, POST happy path,
   POST validation failure). Import-form tests added to
   `tests/test_imports.py`.
+- **MTP harness one-click deploy form** at
+  `/plugins/osp/trunks/deploy-harness/` — a single form submit creates
+  the parent `FibreTrunk` + N cassette `dcim.Device`s + N
+  `dcim.Cable`s linking the source patch-panel RearPort to each new
+  cassette's RearPort + N `TrunkBreakout` rows binding the cables to
+  the trunk at chosen fibre ranges. Atomic — the whole batch rolls
+  back if any row fails validation. Two-step preview/confirm flow uses
+  a `TimestampSigner`-signed state token (600s expiry) to round-trip
+  the cleaned form state safely between the preview and confirm POST
+  steps. Sidebar entry under the existing "Trunks" group plus a green
+  button on the FibreTrunk detail page next to "Add Breakout" /
+  "Import from Cables". New plugin setting `default_cable_type`
+  (default `"smf"`). Exception ladder mirrors PR B's import wizard:
+  `ValidationError` → form-keyed errors, `IntegrityError` →
+  race-condition message, `AbortRequest` → cable-path-impossible
+  message. Tests in `tests/test_mtp_harness.py` cover GET auth, N=2 /
+  N=3 happy paths, overlap rollback, missing-rack rollback, fibre-sum
+  overflow, duplicate-rack rejection, preview-then-confirm round-trip,
+  and permission denial.
 
 ### Notes for upcoming v0.2 PRs
 
-- **PR B** — `TrunkBreakout` through-table bridging FibreTrunk to
-  `dcim.Cable`.
-- **PR C** — `MtpHarness` one-click deploy form.
 - **PR D** — cassette device-type JSON ships.
 - **PR E** — visual core tracer.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PR A; subsequent PRs will append to this `Unreleased` block.
+documents PRs A, B and C; subsequent PRs will append to this
+`Unreleased` block.
 
 ## [0.1.1] — 2026-05-13
 
