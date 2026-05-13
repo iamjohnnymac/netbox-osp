@@ -1060,6 +1060,9 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         })
 
     def post(self, request):
+        import sys
+        print(f"[HARNESS-DEBUG] post() entered, confirm={request.POST.get('confirm')!r}", file=sys.stderr, flush=True)
+        print(f"[HARNESS-DEBUG] post() keys={sorted(request.POST.keys())[:15]}", file=sys.stderr, flush=True)
         if request.POST.get("confirm") == "1":
             return self._post_confirm(request)
         return self._post_preview(request)
@@ -1069,13 +1072,21 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         with a signed state token; on failure re-render the edit form
         with field errors.
         """
+        import sys
+        print("[HARNESS-DEBUG] _post_preview entered", file=sys.stderr, flush=True)
         parent_form = forms.MtpHarnessForm(request.POST)
         dest_formset = forms.MtpHarnessDestinationFormSet(request.POST)
 
-        forms_valid = parent_form.is_valid() & dest_formset.is_valid()
+        parent_valid = parent_form.is_valid()
+        formset_valid = dest_formset.is_valid()
+        print(f"[HARNESS-DEBUG] parent_valid={parent_valid} errors={dict(parent_form.errors)}", file=sys.stderr, flush=True)
+        print(f"[HARNESS-DEBUG] formset_valid={formset_valid} errors={[dict(f.errors) for f in dest_formset.forms]}", file=sys.stderr, flush=True)
+        forms_valid = parent_valid & formset_valid
         cross_ok = forms_valid and self._validate_harness(parent_form, dest_formset)
+        print(f"[HARNESS-DEBUG] forms_valid={forms_valid} cross_ok={cross_ok}", file=sys.stderr, flush=True)
 
         if not (forms_valid and cross_ok):
+            print("[HARNESS-DEBUG] returning re-rendered form (validation failed)", file=sys.stderr, flush=True)
             return render(request, self.template_name, {
                 "form": parent_form,
                 "formset": dest_formset,
@@ -1106,9 +1117,13 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def _post_confirm(self, request):
         """Verify the signed state token, then run the atomic deploy."""
+        import sys
+        print(f"[HARNESS-DEBUG] _post_confirm entered, token len={len(request.POST.get('state_token') or '')}", file=sys.stderr, flush=True)
         token = request.POST.get("state_token") or ""
         payload = _unsign_harness_state(token)
+        print(f"[HARNESS-DEBUG] payload is None: {payload is None}", file=sys.stderr, flush=True)
         if payload is None:
+            print("[HARNESS-DEBUG] redirecting: invalid/expired state", file=sys.stderr, flush=True)
             messages.error(
                 request,
                 "Preview state was invalid or expired. Please restart "
@@ -1119,8 +1134,10 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         try:
             parent_resolved, rows_resolved = self._resolve_state(payload)
         except ValidationError as exc:
+            print(f"[HARNESS-DEBUG] _resolve_state ValidationError: {exc}", file=sys.stderr, flush=True)
             messages.error(request, "; ".join(exc.messages))
             return redirect("plugins:netbox_osp:mtp_harness_deploy")
+        print(f"[HARNESS-DEBUG] resolved OK, rows={len(rows_resolved)}, entering deploy", file=sys.stderr, flush=True)
 
         # Build empty bound forms for the rollback-path render so the
         # operator sees the original values + the error message at the
@@ -1131,6 +1148,8 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         try:
             trunk, devs, cables, breakouts = self._deploy(parent_resolved, rows_resolved)
         except ValidationError as exc:
+            import sys
+            print(f"[HARNESS-DEBUG] _deploy ValidationError: {exc}", file=sys.stderr, flush=True)
             self._render_form_errors_for_validation(parent_form, dest_formset, exc)
             return render(request, self.template_name, {
                 "form": parent_form,
