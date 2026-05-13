@@ -11,6 +11,7 @@ from .models import (
     SpliceClosure,
     SpliceTray,
     Strand,
+    TrunkBreakout,
     Tube,
 )
 
@@ -146,17 +147,47 @@ class FibreTrunkTable(NetBoxTable):
     tenant = tables.Column(linkify=True)
     fibre_count = tables.Column(verbose_name="Fibres")
     length_m = tables.Column(verbose_name="Length (m)")
+    fibres_used = tables.Column(
+        accessor="fibres_used", orderable=False, verbose_name="Used",
+    )
+    fibres_remaining = tables.Column(
+        accessor="fibres_remaining", orderable=False, verbose_name="Remaining",
+    )
 
     class Meta(NetBoxTable.Meta):
         model = FibreTrunk
         fields = (
             "pk", "id", "cid", "trunk_type", "status", "fibre_count",
+            "fibres_used", "fibres_remaining",
             "manufacturer", "length_m", "tenant", "show_on_map",
             "description", "tags", "created", "last_updated",
         )
         default_columns = (
             "cid", "trunk_type", "status", "fibre_count",
+            "fibres_used", "fibres_remaining",
             "manufacturer", "length_m",
+        )
+
+
+class TrunkBreakoutTable(NetBoxTable):
+    trunk = tables.Column(linkify=True)
+    cable = tables.Column(linkify=True, verbose_name="dcim.Cable")
+    fibre_range_start = tables.Column(verbose_name="Start fibre")
+    fibre_range_end = tables.Column(verbose_name="End fibre")
+    fibre_count = tables.Column(
+        accessor="fibre_count", orderable=False, verbose_name="Fibres",
+    )
+
+    class Meta(NetBoxTable.Meta):
+        model = TrunkBreakout
+        fields = (
+            "pk", "id", "trunk", "cable",
+            "fibre_range_start", "fibre_range_end", "fibre_count",
+            "description", "tags", "created", "last_updated",
+        )
+        default_columns = (
+            "trunk", "cable",
+            "fibre_range_start", "fibre_range_end", "fibre_count",
         )
 
 

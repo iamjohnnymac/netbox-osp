@@ -5,9 +5,13 @@ import hashlib
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import View
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 from netbox.views import generic
 
@@ -385,6 +389,18 @@ class LocationGeoBulkImportView(generic.BulkImportView):
 class FibreTrunkView(generic.ObjectView):
     queryset = models.FibreTrunk.objects.select_related("manufacturer", "tenant").all()
 
+    def get_extra_context(self, request, instance):
+        breakouts = (
+            instance.breakouts
+            .select_related("cable")
+            .order_by("fibre_range_start")
+        )
+        breakout_table = tables.TrunkBreakoutTable(breakouts)
+        breakout_table.configure(request)
+        return {
+            "breakout_table": breakout_table,
+        }
+
 
 class FibreTrunkListView(generic.ObjectListView):
     queryset = models.FibreTrunk.objects.select_related("manufacturer", "tenant").all()
@@ -419,6 +435,126 @@ class FibreTrunkBulkImportView(generic.BulkImportView):
     queryset = models.FibreTrunk.objects.all()
     model_form = forms.FibreTrunkImportForm
     table = tables.FibreTrunkTable
+
+
+# ============================================================================
+# TrunkBreakout
+# ============================================================================
+
+class TrunkBreakoutView(generic.ObjectView):
+    queryset = models.TrunkBreakout.objects.select_related("trunk", "cable").all()
+
+
+class TrunkBreakoutListView(generic.ObjectListView):
+    queryset = models.TrunkBreakout.objects.select_related("trunk", "cable").all()
+    table = tables.TrunkBreakoutTable
+    filterset = filtersets.TrunkBreakoutFilterSet
+    filterset_form = forms.TrunkBreakoutFilterForm
+
+
+class TrunkBreakoutEditView(generic.ObjectEditView):
+    queryset = models.TrunkBreakout.objects.all()
+    form = forms.TrunkBreakoutForm
+
+
+class TrunkBreakoutDeleteView(generic.ObjectDeleteView):
+    queryset = models.TrunkBreakout.objects.all()
+
+
+class TrunkBreakoutBulkEditView(generic.BulkEditView):
+    queryset = models.TrunkBreakout.objects.select_related("trunk", "cable").all()
+    filterset = filtersets.TrunkBreakoutFilterSet
+    table = tables.TrunkBreakoutTable
+    form = forms.TrunkBreakoutBulkEditForm
+
+
+class TrunkBreakoutBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.TrunkBreakout.objects.select_related("trunk", "cable").all()
+    filterset = filtersets.TrunkBreakoutFilterSet
+    table = tables.TrunkBreakoutTable
+
+
+class TrunkBreakoutBulkImportView(generic.BulkImportView):
+    queryset = models.TrunkBreakout.objects.all()
+    model_form = forms.TrunkBreakoutImportForm
+    table = tables.TrunkBreakoutTable
+
+
+class TrunkImportFromCablesView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    """One-screen wizard: pick a set of dcim.Cables not yet bound to any
+    TrunkBreakout, and assign sequential fibre ranges starting from
+    `start_fibre`. Atomic — all-or-nothing.
+    """
+    permission_required = "netbox_osp.add_trunkbreakout"
+    template_name = "netbox_osp/trunk_import_cables.html"
+    form_class = forms.ImportCablesIntoTrunkForm
+
+    def _get_trunk(self, pk):
+        return get_object_or_404(models.FibreTrunk, pk=pk)
+
+    def get(self, request, pk):
+        trunk = self._get_trunk(pk)
+        form = self.form_class()
+        return render(request, self.template_name, {
+            "trunk": trunk,
+            "form": form,
+        })
+
+    def post(self, request, pk):
+        trunk = self._get_trunk(pk)
+        form = self.form_class(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {
+                "trunk": trunk,
+                "form": form,
+            })
+
+        cables = list(form.cleaned_data["cables"])
+        cursor = form.cleaned_data["start_fibre"]
+
+        try:
+            with transaction.atomic():
+                created = []
+                for cable in cables:
+                    # Each cable consumes its own fibre_count; we look at
+                    # the dcim.Cable's length-of-rope semantics (cables
+                    # don't carry an explicit fibre count, so default to
+                    # 1 — operators can re-edit if needed). The wizard's
+                    # primary use case is multi-cable assignment with
+                    # operator-driven fibre sizing per row, so for v0.2
+                    # we keep the default-1 fallback and let the operator
+                    # edit individual breakouts afterwards.
+                    fibre_size = getattr(cable, "fibre_count", None) or 1
+                    end = cursor + fibre_size - 1
+                    br = models.TrunkBreakout(
+                        trunk=trunk,
+                        cable=cable,
+                        fibre_range_start=cursor,
+                        fibre_range_end=end,
+                    )
+                    br.full_clean()
+                    br.save()
+                    created.append(br)
+                    cursor = end + 1
+        except ValidationError as exc:
+            # Surface the first keyed error against the form
+            # (atomic block already rolled back).
+            if hasattr(exc, "message_dict"):
+                for field, errs in exc.message_dict.items():
+                    for e in errs:
+                        form.add_error(None, f"{field}: {e}")
+            else:
+                form.add_error(None, "; ".join(exc.messages))
+            return render(request, self.template_name, {
+                "trunk": trunk,
+                "form": form,
+            })
+
+        messages.success(
+            request,
+            f"Created {len(created)} TrunkBreakout row(s) on {trunk.cid}.",
+        )
+        return redirect(trunk.get_absolute_url())
 
 
 # ============================================================================

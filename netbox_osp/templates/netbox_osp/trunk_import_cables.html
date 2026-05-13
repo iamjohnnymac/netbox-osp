@@ -1,0 +1,40 @@
+{% extends 'base/layout.html' %}
+{% load helpers %}
+{% load form_helpers %}
+
+{% block title %}Import cables into {{ trunk.cid }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <h2>Import cables into trunk
+            <a href="{{ trunk.get_absolute_url }}">{{ trunk.cid }}</a>
+        </h2>
+        <p class="text-muted">
+            Select one or more <code>dcim.Cable</code>s not yet bound to any
+            <code>TrunkBreakout</code>. Each selected cable will be assigned a
+            sequential fibre range starting from <strong>Starting fibre
+            position</strong>. The whole batch is applied atomically — if any
+            row fails validation, nothing is saved.
+        </p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            {% render_field form.cables %}
+            {% render_field form.start_fibre %}
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="mdi mdi-import"></i> Import
+                </button>
+                <a href="{{ trunk.get_absolute_url }}" class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

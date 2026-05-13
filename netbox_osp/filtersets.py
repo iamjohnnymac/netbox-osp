@@ -2,7 +2,7 @@ import django_filters
 from django.db.models import Q
 
 from netbox.filtersets import NetBoxModelFilterSet
-from dcim.models import Location, Site
+from dcim.models import Cable, Location, Site
 
 from .choices import (
     FibreLinkStatusChoices,
@@ -22,6 +22,7 @@ from .models import (
     SpliceClosure,
     SpliceTray,
     Strand,
+    TrunkBreakout,
     Tube,
 )
 
@@ -196,3 +197,24 @@ class FibreTrunkFilterSet(NetBoxModelFilterSet):
             Q(cid__icontains=value)
             | Q(description__icontains=value)
         )
+
+
+class TrunkBreakoutFilterSet(NetBoxModelFilterSet):
+    trunk_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=FibreTrunk.objects.all(), field_name="trunk",
+    )
+    cable_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Cable.objects.all(), field_name="cable",
+    )
+
+    class Meta:
+        model = TrunkBreakout
+        fields = (
+            "id", "trunk", "cable",
+            "fibre_range_start", "fibre_range_end",
+        )
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        return queryset.filter(description__icontains=value)

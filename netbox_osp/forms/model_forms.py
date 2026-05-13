@@ -8,7 +8,7 @@ from tenancy.models import Tenant
 
 from ..models import (
     FibreLink, FibreTrunk, LocationGeo, OspCable, Splice, SpliceClosure,
-    SpliceTray, Strand, Tube,
+    SpliceTray, Strand, TrunkBreakout, Tube,
 )
 
 
@@ -136,4 +136,22 @@ class FibreTrunkForm(NetBoxModelForm):
             "cid", "trunk_type", "fibre_count", "manufacturer", "length_m",
             "status", "route", "show_on_map", "tenant",
             "description", "comments", "tags",
+        )
+
+
+class TrunkBreakoutForm(NetBoxModelForm):
+    trunk = DynamicModelChoiceField(queryset=FibreTrunk.objects.all(), required=True)
+    cable = DynamicModelChoiceField(
+        queryset=Cable.objects.all(),
+        required=True,
+        label="dcim.Cable",
+        help_text="Native NetBox cable carrying this fibre range.",
+    )
+
+    class Meta:
+        model = TrunkBreakout
+        fields = (
+            "trunk", "cable",
+            "fibre_range_start", "fibre_range_end",
+            "description", "tags",
         )

@@ -25,6 +25,7 @@ from ..models import (
     SpliceClosure,
     SpliceTray,
     Strand,
+    TrunkBreakout,
     Tube,
 )
 
@@ -103,3 +104,14 @@ class FibreTrunkBulkEditForm(NetBoxModelBulkEditForm):
 
     model = FibreTrunk
     nullable_fields = ("tenant", "manufacturer", "length_m", "description")
+
+
+class TrunkBreakoutBulkEditForm(NetBoxModelBulkEditForm):
+    # Range fields intentionally NOT bulk-editable: re-running the
+    # overlap-validation pass across an N-row update is fragile, and
+    # operators almost never want to slide every breakout's range at
+    # once. Edit them individually.
+    trunk = DynamicModelChoiceField(queryset=FibreTrunk.objects.all(), required=False)
+
+    model = TrunkBreakout
+    nullable_fields = ("description",)

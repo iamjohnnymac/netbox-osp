@@ -3,7 +3,7 @@ from django import forms
 from netbox.forms import NetBoxModelImportForm
 from utilities.forms.fields import CSVChoiceField, CSVModelChoiceField
 
-from dcim.models import Location
+from dcim.models import Cable, Location
 
 from ..choices import (
     LocationMarkerColorChoices,
@@ -19,6 +19,7 @@ from ..models import (
     SpliceClosure,
     SpliceTray,
     Strand,
+    TrunkBreakout,
     Tube,
 )
 
@@ -258,3 +259,65 @@ class FibreTrunkImportForm(NetBoxModelImportForm):
             "cid", "trunk_type", "fibre_count", "manufacturer", "length_m",
             "status", "show_on_map", "tenant", "description",
         )
+
+
+class TrunkBreakoutImportForm(NetBoxModelImportForm):
+    trunk = CSVModelChoiceField(
+        queryset=FibreTrunk.objects.all(),
+        to_field_name="cid",
+        help_text="FibreTrunk CID (e.g. MTP-MMR-RACKA-001).",
+    )
+    cable = CSVModelChoiceField(
+        queryset=Cable.objects.all(),
+        to_field_name="label",
+        help_text="dcim.Cable label. Must match exactly one Cable; "
+                  "labels are not globally unique, so disambiguate via "
+                  "the UI first if needed.",
+    )
+
+    class Meta:
+        model = TrunkBreakout
+        fields = (
+            "trunk", "cable",
+            "fibre_range_start", "fibre_range_end",
+            "description",
+        )
+
+    def clean(self):
+        super().clean()
+        # Cable.label is not unique; surface a clear error if the lookup
+        # was ambiguous. CSVModelChoiceField's default behaviour with a
+        # non-unique to_field_name silently picks one — we want to fail
+        # loudly instead.
+        raw_label = (self.data or {}).get("cable")
+        if raw_label:
+            matches = Cable.objects.filter(label=raw_label).count()
+            if matches == 0:
+                raise forms.ValidationError(
+                    {"cable": f"no Cable with label {raw_label!r} found."}
+                )
+            if matches > 1:
+                raise forms.ValidationError(
+                    {"cable": (
+                        f"label {raw_label!r} matches {matches} cables — "
+                        "labels are not globally unique. Rename one or "
+                        "use the UI to disambiguate."
+                    )}
+                )
+        # Re-run the model's overlap / parent-fibre-count check on the
+        # candidate row so CSV imports surface the same keyed errors as
+        # the admin form.
+        trunk = self.cleaned_data.get("trunk")
+        cable = self.cleaned_data.get("cable")
+        start = self.cleaned_data.get("fibre_range_start")
+        end = self.cleaned_data.get("fibre_range_end")
+        if trunk and cable and start is not None and end is not None:
+            instance = TrunkBreakout(
+                trunk=trunk,
+                cable=cable,
+                fibre_range_start=start,
+                fibre_range_end=end,
+            )
+            if self.instance.pk:
+                instance.pk = self.instance.pk
+            instance.clean()

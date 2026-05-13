@@ -111,3 +111,11 @@ class FibreTrunkFilter(PrimaryModelFilter):
     fibre_count: FilterLookup[int] | None = strawberry_django.filter_field()
     tenant_id: FilterLookup[int] | None = strawberry_django.filter_field()
     manufacturer_id: FilterLookup[int] | None = strawberry_django.filter_field()
+
+
+@strawberry_django.filter_type(models.TrunkBreakout, lookups=True)
+class FibreTrunkBreakoutFilter(NetBoxModelFilter):
+    trunk_id: FilterLookup[int] | None = strawberry_django.filter_field()
+    cable_id: FilterLookup[int] | None = strawberry_django.filter_field()
+    fibre_range_start: FilterLookup[int] | None = strawberry_django.filter_field()
+    fibre_range_end: FilterLookup[int] | None = strawberry_django.filter_field()

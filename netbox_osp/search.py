@@ -1,6 +1,6 @@
 from netbox.search import SearchIndex, register_search
 
-from .models import FibreLink, FibreTrunk, OspCable, SpliceClosure
+from .models import FibreLink, FibreTrunk, OspCable, SpliceClosure, TrunkBreakout
 
 
 @register_search
@@ -42,4 +42,12 @@ class FibreTrunkIndex(SearchIndex):
         ("cid", 100),
         ("description", 500),
         ("comments", 1000),
+    )
+
+
+@register_search
+class TrunkBreakoutIndex(SearchIndex):
+    model = TrunkBreakout
+    fields = (
+        ("description", 500),
     )

@@ -1,0 +1,71 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load static %}
+{% load render_table from django_tables2 %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'netbox_osp/css/netbox-osp.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Fibre Trunk</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>CID</th><td>{{ object.cid }}</td></tr>
+                <tr><th>Type</th><td>{% badge object.get_trunk_type_display bg_color=object.get_trunk_type_color %}</td></tr>
+                <tr><th>Status</th><td>{% badge object.get_status_display bg_color=object.get_status_color %}</td></tr>
+                <tr><th>Fibre count</th><td>{{ object.fibre_count }}</td></tr>
+                <tr><th>Manufacturer</th><td>{{ object.manufacturer|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Length (m)</th><td>{{ object.length_m|default:"&mdash;" }}</td></tr>
+                <tr><th>Tenant</th><td>{{ object.tenant|linkify|default:"&mdash;" }}</td></tr>
+                <tr><th>Show on map</th><td>{{ object.show_on_map|yesno:"yes,no" }}</td></tr>
+                <tr><th>Description</th><td>{{ object.description|default:"&mdash;" }}</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">Fibre utilisation</h5>
+            <table class="table table-hover attr-table">
+                <tr><th>Capacity</th><td>{{ object.fibre_count }} fibres</td></tr>
+                <tr><th>Used</th><td>{{ object.fibres_used }}</td></tr>
+                <tr><th>Remaining</th><td>{{ object.fibres_remaining }}</td></tr>
+                <tr>
+                    <th>Utilisation</th>
+                    <td>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar bg-info" role="progressbar"
+                                 style="width: {{ object.fibres_utilization_pct }}%;">
+                                {{ object.fibres_utilization_pct }}%
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        {% include 'inc/panels/tags.html' %}
+        {% include 'inc/panels/comments.html' %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        <div class="card">
+            <h5 class="card-header d-flex align-items-center">
+                <span class="me-auto">Breakouts</span>
+                <a href="{% url 'plugins:netbox_osp:trunkbreakout_add' %}?trunk={{ object.pk }}"
+                   class="btn btn-sm btn-primary">
+                    <i class="mdi mdi-plus-thick"></i> Add Breakout
+                </a>
+                <a href="{% url 'plugins:netbox_osp:fibretrunk_import_cables' pk=object.pk %}"
+                   class="btn btn-sm btn-outline-primary ms-2">
+                    <i class="mdi mdi-upload"></i> Import from Cables
+                </a>
+            </h5>
+            {% render_table breakout_table 'inc/table.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}
