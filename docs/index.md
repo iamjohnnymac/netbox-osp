@@ -16,6 +16,7 @@ Outside-plant (OSP) fibre management for [NetBox](https://github.com/netbox-comm
 - [Configure](configure.md)
 - [Data model](data-model.md)
 - [Tile bundling](tile-bundling.md)
+- [Compatibility](compatibility.md)
 - [Changelog](changelog.md)
 - [GitHub](https://github.com/iamjohnnymac/netbox-osp) · [PyPI](https://pypi.org/project/netbox-osp/)
 

@@ -4,12 +4,12 @@ All notable changes to `netbox-osp` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Per-release NetBox / Python compatibility lives on the
-[Compatibility](compatibility.md) page.
+Per-release NetBox / Python compatibility lives in
+[COMPATIBILITY.md](COMPATIBILITY.md).
 
-## Unreleased
+## [Unreleased]
 
-## 0.1.0 — 2026-05-13
+## [0.1.0] — 2026-05-13
 
 First functional release. Covers the full OSP fibre data model, the
 interactive plant map with online + offline base layers, REST + GraphQL
@@ -79,9 +79,14 @@ GPS markers.
   against a live `/graphql/` endpoint. REST API is fully functional in
   the meantime.
 - Permission-matrix tests cover the SpliceClosure canary; the remaining
-  models will be added in a focused follow-up. REST `APIViewTestCase`
-  permission tests are deferred until CI wires `API_TOKEN_PEPPERS`.
+  primary-object view sets will be added in a focused follow-up. REST
+  `APIViewTestCase` permission tests are deferred until CI wires
+  `API_TOKEN_PEPPERS`.
 
-## 0.0.1 — 2026-05-13
+## [0.0.1] — 2026-05-13
 
 - PyPI name-reservation placeholder. Not functional.
+
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.1.0
+[0.0.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.0.1
