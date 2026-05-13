@@ -108,4 +108,16 @@ urlpatterns = [
     path("location-geos/<int:pk>/delete/", views.LocationGeoDeleteView.as_view(), name="locationgeo_delete"),
     path("location-geos/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
          name="locationgeo_changelog", kwargs={"model": models.LocationGeo}),
+
+    # ----- FibreTrunk -----
+    path("trunks/", views.FibreTrunkListView.as_view(), name="fibretrunk_list"),
+    path("trunks/add/", views.FibreTrunkEditView.as_view(), name="fibretrunk_add"),
+    path("trunks/edit/", views.FibreTrunkBulkEditView.as_view(), name="fibretrunk_bulk_edit"),
+    path("trunks/delete/", views.FibreTrunkBulkDeleteView.as_view(), name="fibretrunk_bulk_delete"),
+    path("trunks/import/", views.FibreTrunkBulkImportView.as_view(), name="fibretrunk_import"),
+    path("trunks/<int:pk>/", views.FibreTrunkView.as_view(), name="fibretrunk"),
+    path("trunks/<int:pk>/edit/", views.FibreTrunkEditView.as_view(), name="fibretrunk_edit"),
+    path("trunks/<int:pk>/delete/", views.FibreTrunkDeleteView.as_view(), name="fibretrunk_delete"),
+    path("trunks/<int:pk>/changelog/", ObjectChangeLogView.as_view(),
+         name="fibretrunk_changelog", kwargs={"model": models.FibreTrunk}),
 ]

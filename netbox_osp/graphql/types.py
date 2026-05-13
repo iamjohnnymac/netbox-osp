@@ -22,7 +22,7 @@ from netbox_osp import models
 from . import filters
 
 if TYPE_CHECKING:
-    from dcim.graphql.types import LocationType, SiteType
+    from dcim.graphql.types import LocationType, ManufacturerType, SiteType
     from tenancy.graphql.types import TenantType
 
 
@@ -186,3 +186,18 @@ class LocationGeoType(NetBoxObjectType):
     @strawberry_django.field
     def has_coords(self) -> bool:
         return self.has_coords
+
+
+# ---- FibreTrunk --------------------------------------------------------
+
+@strawberry_django.type(
+    models.FibreTrunk,
+    fields="__all__",
+    filters=filters.FibreTrunkFilter,
+    pagination=True,
+)
+class FibreTrunkType(NetBoxObjectType):
+    tenant: Annotated["TenantType", strawberry.lazy("tenancy.graphql.types")] | None
+    manufacturer: Annotated[
+        "ManufacturerType", strawberry.lazy("dcim.graphql.types"),
+    ] | None

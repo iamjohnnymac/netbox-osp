@@ -12,6 +12,7 @@ from ..choices import (
     TIA598ColorChoices,
 )
 from ..models import (
+    FibreTrunk,
     LocationGeo,
     OspCable,
     Splice,
@@ -245,3 +246,15 @@ class SpliceImportForm(NetBoxModelImportForm):
                 raise forms.ValidationError(
                     {"position": f"position {position} exceeds tray.capacity={tray.capacity}."}
                 )
+
+
+class FibreTrunkImportForm(NetBoxModelImportForm):
+    class Meta:
+        model = FibreTrunk
+        # `route` (GeoJSON) is excluded — CSV-pasting raw GeoJSON is hostile.
+        # Set it via the UI or REST API after import. Mirrors the
+        # SpliceClosureImportForm.location_point exclusion rule.
+        fields = (
+            "cid", "trunk_type", "fibre_count", "manufacturer", "length_m",
+            "status", "show_on_map", "tenant", "description",
+        )

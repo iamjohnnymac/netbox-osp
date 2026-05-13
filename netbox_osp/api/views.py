@@ -50,3 +50,9 @@ class LocationGeoViewSet(NetBoxModelViewSet):
     queryset = models.LocationGeo.objects.select_related("location__site").prefetch_related("tags").all()
     serializer_class = serializers.LocationGeoSerializer
     filterset_class = filtersets.LocationGeoFilterSet
+
+
+class FibreTrunkViewSet(NetBoxModelViewSet):
+    queryset = models.FibreTrunk.objects.prefetch_related("tags").all()
+    serializer_class = serializers.FibreTrunkSerializer
+    filterset_class = filtersets.FibreTrunkFilterSet

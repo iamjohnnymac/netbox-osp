@@ -379,6 +379,49 @@ class LocationGeoBulkImportView(generic.BulkImportView):
 
 
 # ============================================================================
+# FibreTrunk
+# ============================================================================
+
+class FibreTrunkView(generic.ObjectView):
+    queryset = models.FibreTrunk.objects.select_related("manufacturer", "tenant").all()
+
+
+class FibreTrunkListView(generic.ObjectListView):
+    queryset = models.FibreTrunk.objects.select_related("manufacturer", "tenant").all()
+    table = tables.FibreTrunkTable
+    filterset = filtersets.FibreTrunkFilterSet
+    filterset_form = forms.FibreTrunkFilterForm
+
+
+class FibreTrunkEditView(generic.ObjectEditView):
+    queryset = models.FibreTrunk.objects.all()
+    form = forms.FibreTrunkForm
+
+
+class FibreTrunkDeleteView(generic.ObjectDeleteView):
+    queryset = models.FibreTrunk.objects.all()
+
+
+class FibreTrunkBulkEditView(generic.BulkEditView):
+    queryset = models.FibreTrunk.objects.select_related("manufacturer", "tenant").all()
+    filterset = filtersets.FibreTrunkFilterSet
+    table = tables.FibreTrunkTable
+    form = forms.FibreTrunkBulkEditForm
+
+
+class FibreTrunkBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.FibreTrunk.objects.select_related("manufacturer", "tenant").all()
+    filterset = filtersets.FibreTrunkFilterSet
+    table = tables.FibreTrunkTable
+
+
+class FibreTrunkBulkImportView(generic.BulkImportView):
+    queryset = models.FibreTrunk.objects.all()
+    model_form = forms.FibreTrunkImportForm
+    table = tables.FibreTrunkTable
+
+
+# ============================================================================
 # Network Map
 # ============================================================================
 

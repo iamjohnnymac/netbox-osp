@@ -9,6 +9,41 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+### Added
+
+- **`FibreTrunk` model** — parent for multi-fibre rack-to-rack physical
+  trunks (MPO/MTP 12/24/72-fibre, Ribbon 144-fibre, loose-tube indoor
+  runs). Carries `cid`, `trunk_type`, `fibre_count`, `manufacturer`,
+  `length_m`, `status` (reuses `OspStatusChoices`), GeoJSON `route` with
+  `show_on_map` opt-out, `description`, `comments`, `tenant`, `tags`.
+  DB-level `CheckConstraint` on `fibre_count > 0` plus a form-friendly
+  validation surfacing the same on the `fibre_count` field. New
+  `TrunkTypeChoices` palette (`mpo-12`, `mpo-24`, `mpo-72`,
+  `ribbon-144`, `loose-tube-n`, `other`) with a per-type
+  `DEFAULT_FIBRE_COUNT` mapping ready for a follow-up auto-fill.
+- **REST CRUD** under `/api/plugins/osp/trunks/` (full serializer,
+  viewset, filter-set, router registration).
+- **GraphQL** — `osp_fibre_trunk` and `osp_fibre_trunk_list` queries
+  via the new `FibreTrunkType` / `FibreTrunkFilter`.
+- **Admin chrome** — list / add / edit / delete / bulk-edit /
+  bulk-delete / bulk-import / changelog views, table with status +
+  trunk-type colour columns, filter form, sidebar entry under a new
+  "Trunks" group with Add + Import buttons, search-index registration.
+- **Tests** — `tests/test_fibretrunk.py` covering `__str__`, defaults,
+  `clean()` (fibre_count guard and GeoJSON shape), tagging, REST CRUD
+  with auth, and GraphQL module-level exposure.
+
+### Notes for upcoming v0.2 PRs
+
+- **PR B** — `TrunkBreakout` through-table bridging FibreTrunk to
+  `dcim.Cable`.
+- **PR C** — `MtpHarness` one-click deploy form.
+- **PR D** — cassette device-type JSON ships.
+- **PR E** — visual core tracer.
+
+The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
+documents PR A; subsequent PRs will append to this `Unreleased` block.
+
 ## [0.1.1] — 2026-05-13
 
 ### Fixed

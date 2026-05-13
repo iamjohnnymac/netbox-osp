@@ -78,3 +78,13 @@ jetty poles can be pinned on the network map alongside Site markers.
 matching `Site.latitude` / `Site.longitude` precision; both are optional
 but must be set together. `marker_color` picks from a short hue-separated
 palette so different Location classes stay visually distinct.
+
+### `FibreTrunk`
+A multi-fibre physical trunk (MPO/MTP 12/24/72-fibre, Ribbon 144-fibre,
+loose-tube indoor runs). Carries `cid`, `trunk_type`, `fibre_count`,
+`manufacturer`, `length_m`, `status` (reuses `OspStatusChoices`), an
+optional GeoJSON `route` with a `show_on_map` opt-out, `description`,
+`comments`, `tenant`, `tags`. DB-level `CheckConstraint` on
+`fibre_count > 0`. The forthcoming `TrunkBreakout` through-table (v0.2
+PR B) bridges this parent to `dcim.Cable` so operators can express
+"one 24F trunk → two 12F breakouts" as one logical entity.

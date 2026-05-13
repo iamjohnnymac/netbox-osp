@@ -7,7 +7,8 @@ from dcim.models import Cable, Location, Manufacturer, Site
 from tenancy.models import Tenant
 
 from ..models import (
-    FibreLink, LocationGeo, OspCable, Splice, SpliceClosure, SpliceTray, Strand, Tube,
+    FibreLink, FibreTrunk, LocationGeo, OspCable, Splice, SpliceClosure,
+    SpliceTray, Strand, Tube,
 )
 
 
@@ -117,4 +118,22 @@ class LocationGeoForm(NetBoxModelForm):
         fields = (
             "location", "latitude", "longitude", "elevation_m",
             "marker_color", "description", "tags",
+        )
+
+
+class FibreTrunkForm(NetBoxModelForm):
+    manufacturer = DynamicModelChoiceField(queryset=Manufacturer.objects.all(), required=False)
+    tenant = DynamicModelChoiceField(queryset=Tenant.objects.all(), required=False)
+    route = JSONField(
+        required=False,
+        help_text="GeoJSON LineString. Leave blank for intra-plant trunks.",
+    )
+    comments = CommentField()
+
+    class Meta:
+        model = FibreTrunk
+        fields = (
+            "cid", "trunk_type", "fibre_count", "manufacturer", "length_m",
+            "status", "route", "show_on_map", "tenant",
+            "description", "comments", "tags",
         )
