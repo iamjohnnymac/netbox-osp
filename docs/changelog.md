@@ -9,6 +9,12 @@ Per-release NetBox / Python compatibility lives on the
 
 ## Unreleased
 
+## 0.2.0 — 2026-05-13
+
+Five-PR cycle adding inter-rack fibre infrastructure: MPO/MTP trunks
+with breakouts to cassettes, one-click harness deploy, cassette
+device-type catalogue, and an end-to-end visual core tracer.
+
 ### Added
 
 - **`FibreTrunk` model** — parent for multi-fibre rack-to-rack physical
