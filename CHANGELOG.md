@@ -76,27 +76,50 @@ Per-release NetBox / Python compatibility lives in
   cassette's RearPort + N `TrunkBreakout` rows binding the cables to
   the trunk at chosen fibre ranges. Atomic — the whole batch rolls
   back if any row fails validation. Two-step preview/confirm flow uses
-  a `TimestampSigner`-signed state token (600s expiry) to round-trip
-  the cleaned form state safely between the preview and confirm POST
-  steps. Sidebar entry under the existing "Trunks" group plus a green
-  button on the FibreTrunk detail page next to "Add Breakout" /
-  "Import from Cables". New plugin setting `default_cable_type`
-  (default `"smf"`). Exception ladder mirrors PR B's import wizard:
-  `ValidationError` → form-keyed errors, `IntegrityError` →
-  race-condition message, `AbortRequest` → cable-path-impossible
-  message. Tests in `tests/test_mtp_harness.py` cover GET auth, N=2 /
-  N=3 happy paths, overlap rollback, missing-rack rollback, fibre-sum
-  overflow, duplicate-rack rejection, preview-then-confirm round-trip,
-  and permission denial.
+  `django.core.signing.dumps` (base64-encoded, HTML-safe) to
+  round-trip the cleaned form state safely between the preview and
+  confirm POST steps with a 600s expiry. Sidebar entry under the
+  existing "Trunks" group plus a green button on the FibreTrunk detail
+  page next to "Add Breakout" / "Import from Cables". New plugin
+  setting `default_cable_type` (default `"smf"`). Exception ladder
+  mirrors PR B's import wizard: `ValidationError` → form-keyed errors,
+  `IntegrityError` → race-condition message, `AbortRequest` →
+  cable-path-impossible message. Tests in `tests/test_mtp_harness.py`
+  cover GET auth, N=2 / N=3 happy paths, overlap rollback,
+  missing-rack rollback, fibre-sum overflow, duplicate-rack rejection,
+  preview-then-confirm round-trip, and permission denial.
+- **Bundled cassette catalogue** — five `DeviceType` JSON templates at
+  `netbox_osp/device_types/cassettes/` covering the standard MPO/MTP
+  fibre-cassette and LC patch-panel shapes that pair with the MTP
+  harness deploy form: `mpo-12f-lc-cassette` (1× MPO-12 rear → 12× LC),
+  `mpo-24f-lc-cassette` (1× MPO-24 rear → 24× LC),
+  `mpo-12f-mpo-cassette` (MPO pass-through), `lgx-lc-12f-panel`
+  (1U LGX), `ru1-lc-24f-panel` (1U 24F with 2× MPO-12 rears). JSON
+  follows the `netbox-community/devicetype-library` schema (hyphenated
+  `rear-ports` / `front-ports` keys), so the same files import via the
+  upstream loader too.
+- **`load_osp_cassettes` management command** — `python manage.py
+  load_osp_cassettes` seeds all five cassettes into the live DB.
+  Idempotent (slug-keyed `update_or_create`), wraps each cassette in
+  one `transaction.atomic()`, materialises `RearPortTemplate` +
+  `FrontPortTemplate` + `PortTemplateMapping` rows with `front`-to-
+  `rear` pin maps preserved. Ships a `--dry-run` flag for safe
+  inspection.
+- **Cassette tests** — `tests/test_cassettes.py` covering JSON
+  validity, required-key presence, cross-reference integrity (every
+  `rear_port` referent exists, every `rear_port_position` is within
+  bounds), management-command happy-path + idempotency contract, a
+  spot check on the MPO-12F-LC port-template materialisation, and a
+  forbidden-token guard so operator-site names never bake into the
+  generic catalogue.
 
 ### Notes for upcoming v0.2 PRs
 
-- **PR D** — cassette device-type JSON ships.
 - **PR E** — visual core tracer.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PRs A, B and C; subsequent PRs will append to this
-`Unreleased` block.
+documents PRs A, B, C, and D; PR E (visual core tracer) appends to
+this `Unreleased` block once it merges.
 
 ## [0.1.1] — 2026-05-13
 
