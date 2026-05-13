@@ -102,6 +102,25 @@ class TubeDeleteView(generic.ObjectDeleteView):
     queryset = models.Tube.objects.all()
 
 
+class TubeBulkEditView(generic.BulkEditView):
+    queryset = models.Tube.objects.select_related("cable").all()
+    filterset = filtersets.TubeFilterSet
+    table = tables.TubeTable
+    form = forms.TubeBulkEditForm
+
+
+class TubeBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Tube.objects.select_related("cable").all()
+    filterset = filtersets.TubeFilterSet
+    table = tables.TubeTable
+
+
+class TubeBulkImportView(generic.BulkImportView):
+    queryset = models.Tube.objects.all()
+    model_form = forms.TubeImportForm
+    table = tables.TubeTable
+
+
 # ============================================================================
 # Strand
 # ============================================================================
@@ -124,6 +143,25 @@ class StrandEditView(generic.ObjectEditView):
 
 class StrandDeleteView(generic.ObjectDeleteView):
     queryset = models.Strand.objects.all()
+
+
+class StrandBulkEditView(generic.BulkEditView):
+    queryset = models.Strand.objects.select_related("cable", "tube").all()
+    filterset = filtersets.StrandFilterSet
+    table = tables.StrandTable
+    form = forms.StrandBulkEditForm
+
+
+class StrandBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Strand.objects.select_related("cable", "tube").all()
+    filterset = filtersets.StrandFilterSet
+    table = tables.StrandTable
+
+
+class StrandBulkImportView(generic.BulkImportView):
+    queryset = models.Strand.objects.all()
+    model_form = forms.StrandImportForm
+    table = tables.StrandTable
 
 
 # ============================================================================
@@ -156,6 +194,25 @@ class SpliceClosureDeleteView(generic.ObjectDeleteView):
     queryset = models.SpliceClosure.objects.all()
 
 
+class SpliceClosureBulkEditView(generic.BulkEditView):
+    queryset = models.SpliceClosure.objects.all()
+    filterset = filtersets.SpliceClosureFilterSet
+    table = tables.SpliceClosureTable
+    form = forms.SpliceClosureBulkEditForm
+
+
+class SpliceClosureBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.SpliceClosure.objects.all()
+    filterset = filtersets.SpliceClosureFilterSet
+    table = tables.SpliceClosureTable
+
+
+class SpliceClosureBulkImportView(generic.BulkImportView):
+    queryset = models.SpliceClosure.objects.all()
+    model_form = forms.SpliceClosureImportForm
+    table = tables.SpliceClosureTable
+
+
 # ============================================================================
 # SpliceTray
 # ============================================================================
@@ -164,7 +221,9 @@ class SpliceTrayView(generic.ObjectView):
     queryset = models.SpliceTray.objects.all()
 
     def get_extra_context(self, request, instance):
-        splices = instance.splices.order_by("position").select_related("strand_a__cable", "strand_b__cable")
+        splices = instance.splices.order_by("position").select_related(
+            "strand_a__cable", "strand_b__cable"
+        )
         splice_table = tables.SpliceTable(splices)
         splice_table.configure(request)
         return {"splice_table": splice_table}
@@ -184,6 +243,25 @@ class SpliceTrayEditView(generic.ObjectEditView):
 
 class SpliceTrayDeleteView(generic.ObjectDeleteView):
     queryset = models.SpliceTray.objects.all()
+
+
+class SpliceTrayBulkEditView(generic.BulkEditView):
+    queryset = models.SpliceTray.objects.select_related("closure").all()
+    filterset = filtersets.SpliceTrayFilterSet
+    table = tables.SpliceTrayTable
+    form = forms.SpliceTrayBulkEditForm
+
+
+class SpliceTrayBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.SpliceTray.objects.select_related("closure").all()
+    filterset = filtersets.SpliceTrayFilterSet
+    table = tables.SpliceTrayTable
+
+
+class SpliceTrayBulkImportView(generic.BulkImportView):
+    queryset = models.SpliceTray.objects.all()
+    model_form = forms.SpliceTrayImportForm
+    table = tables.SpliceTrayTable
 
 
 # ============================================================================
@@ -208,6 +286,25 @@ class SpliceEditView(generic.ObjectEditView):
 
 class SpliceDeleteView(generic.ObjectDeleteView):
     queryset = models.Splice.objects.all()
+
+
+class SpliceBulkEditView(generic.BulkEditView):
+    queryset = models.Splice.objects.select_related("tray__closure").all()
+    filterset = filtersets.SpliceFilterSet
+    table = tables.SpliceTable
+    form = forms.SpliceBulkEditForm
+
+
+class SpliceBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Splice.objects.select_related("tray__closure").all()
+    filterset = filtersets.SpliceFilterSet
+    table = tables.SpliceTable
+
+
+class SpliceBulkImportView(generic.BulkImportView):
+    queryset = models.Splice.objects.all()
+    model_form = forms.SpliceImportForm
+    table = tables.SpliceTable
 
 
 # ============================================================================
@@ -280,8 +377,8 @@ class NetworkMapDataView(LoginRequiredMixin, View):
             cables_qs = cables_qs.filter(type__in=types)
 
         # Only surface sites that actually appear as an OSP cable endpoint —
-        # otherwise the map auto-fit pulls in unrelated sites (e.g. a remote
-        # admin office) and zooms way out past the tile coverage area.
+        # otherwise the map auto-fit pulls in unrelated sites and zooms way
+        # out past the tile coverage area.
         cable_site_ids = set(cables_qs.values_list("site_a_id", flat=True)) | set(
             cables_qs.values_list("site_b_id", flat=True)
         )

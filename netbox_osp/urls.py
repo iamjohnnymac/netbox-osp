@@ -1,4 +1,5 @@
 from django.urls import path
+
 from netbox.views.generic import ObjectChangeLogView, ObjectJournalView
 
 from . import models, views
@@ -13,6 +14,7 @@ urlpatterns = [
     path("tiles/<int:z>/<int:x>/<int:y>.<str:ext>", views.TileProxyView.as_view(), name="tile_proxy"),
 
     # ----- OspCable -----
+    # Order matters: edit/, delete/, import/ MUST precede the greedy <int:pk>/.
     path("cables/", views.OspCableListView.as_view(), name="ospcable_list"),
     path("cables/add/", views.OspCableEditView.as_view(), name="ospcable_add"),
     path("cables/edit/", views.OspCableBulkEditView.as_view(), name="ospcable_bulk_edit"),
@@ -29,6 +31,9 @@ urlpatterns = [
     # ----- Tube -----
     path("tubes/", views.TubeListView.as_view(), name="tube_list"),
     path("tubes/add/", views.TubeEditView.as_view(), name="tube_add"),
+    path("tubes/edit/", views.TubeBulkEditView.as_view(), name="tube_bulk_edit"),
+    path("tubes/delete/", views.TubeBulkDeleteView.as_view(), name="tube_bulk_delete"),
+    path("tubes/import/", views.TubeBulkImportView.as_view(), name="tube_import"),
     path("tubes/<int:pk>/", views.TubeView.as_view(), name="tube"),
     path("tubes/<int:pk>/edit/", views.TubeEditView.as_view(), name="tube_edit"),
     path("tubes/<int:pk>/delete/", views.TubeDeleteView.as_view(), name="tube_delete"),
@@ -38,6 +43,9 @@ urlpatterns = [
     # ----- Strand -----
     path("strands/", views.StrandListView.as_view(), name="strand_list"),
     path("strands/add/", views.StrandEditView.as_view(), name="strand_add"),
+    path("strands/edit/", views.StrandBulkEditView.as_view(), name="strand_bulk_edit"),
+    path("strands/delete/", views.StrandBulkDeleteView.as_view(), name="strand_bulk_delete"),
+    path("strands/import/", views.StrandBulkImportView.as_view(), name="strand_import"),
     path("strands/<int:pk>/", views.StrandView.as_view(), name="strand"),
     path("strands/<int:pk>/edit/", views.StrandEditView.as_view(), name="strand_edit"),
     path("strands/<int:pk>/delete/", views.StrandDeleteView.as_view(), name="strand_delete"),
@@ -47,6 +55,9 @@ urlpatterns = [
     # ----- SpliceClosure -----
     path("closures/", views.SpliceClosureListView.as_view(), name="spliceclosure_list"),
     path("closures/add/", views.SpliceClosureEditView.as_view(), name="spliceclosure_add"),
+    path("closures/edit/", views.SpliceClosureBulkEditView.as_view(), name="spliceclosure_bulk_edit"),
+    path("closures/delete/", views.SpliceClosureBulkDeleteView.as_view(), name="spliceclosure_bulk_delete"),
+    path("closures/import/", views.SpliceClosureBulkImportView.as_view(), name="spliceclosure_import"),
     path("closures/<int:pk>/", views.SpliceClosureView.as_view(), name="spliceclosure"),
     path("closures/<int:pk>/edit/", views.SpliceClosureEditView.as_view(), name="spliceclosure_edit"),
     path("closures/<int:pk>/delete/", views.SpliceClosureDeleteView.as_view(), name="spliceclosure_delete"),
@@ -56,6 +67,9 @@ urlpatterns = [
     # ----- SpliceTray -----
     path("trays/", views.SpliceTrayListView.as_view(), name="splicetray_list"),
     path("trays/add/", views.SpliceTrayEditView.as_view(), name="splicetray_add"),
+    path("trays/edit/", views.SpliceTrayBulkEditView.as_view(), name="splicetray_bulk_edit"),
+    path("trays/delete/", views.SpliceTrayBulkDeleteView.as_view(), name="splicetray_bulk_delete"),
+    path("trays/import/", views.SpliceTrayBulkImportView.as_view(), name="splicetray_import"),
     path("trays/<int:pk>/", views.SpliceTrayView.as_view(), name="splicetray"),
     path("trays/<int:pk>/edit/", views.SpliceTrayEditView.as_view(), name="splicetray_edit"),
     path("trays/<int:pk>/delete/", views.SpliceTrayDeleteView.as_view(), name="splicetray_delete"),
@@ -65,6 +79,9 @@ urlpatterns = [
     # ----- Splice -----
     path("splices/", views.SpliceListView.as_view(), name="splice_list"),
     path("splices/add/", views.SpliceEditView.as_view(), name="splice_add"),
+    path("splices/edit/", views.SpliceBulkEditView.as_view(), name="splice_bulk_edit"),
+    path("splices/delete/", views.SpliceBulkDeleteView.as_view(), name="splice_bulk_delete"),
+    path("splices/import/", views.SpliceBulkImportView.as_view(), name="splice_import"),
     path("splices/<int:pk>/", views.SpliceView.as_view(), name="splice"),
     path("splices/<int:pk>/edit/", views.SpliceEditView.as_view(), name="splice_edit"),
     path("splices/<int:pk>/delete/", views.SpliceDeleteView.as_view(), name="splice_delete"),
