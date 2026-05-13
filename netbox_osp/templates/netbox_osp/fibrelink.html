@@ -36,12 +36,6 @@
                     <td>
                         {% load l10n %}
                         {% with gauge=object.loss_budget_gauge %}
-                        {# Inline SVG gauge: bands at 80% and 100% of target, plus
-                           a permanent 50% overflow zone so over-budget links don't
-                           just clip silently. viewBox is 200 wide; 100% of target
-                           sits at x=133.33. unlocalize on numeric attributes so
-                           non-English locales (de/fr/it…) don't emit `40,0` and
-                           break the SVG. #}
                         <svg viewBox="0 0 200 32" xmlns="http://www.w3.org/2000/svg"
                              class="osp-loss-gauge osp-loss-gauge--{{ gauge.band }}"
                              role="img"
