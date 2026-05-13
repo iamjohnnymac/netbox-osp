@@ -88,3 +88,21 @@ optional GeoJSON `route` with a `show_on_map` opt-out, `description`,
 `fibre_count > 0`. The forthcoming `TrunkBreakout` through-table (v0.2
 PR B) bridges this parent to `dcim.Cable` so operators can express
 "one 24F trunk → two 12F breakouts" as one logical entity.
+
+### MTP harness one-click deploy
+
+The harness-deploy form at `/plugins/osp/trunks/deploy-harness/`
+orchestrates a complete inter-rack fibre deployment in one submit. The
+operator provides trunk metadata, a source patch-panel RearPort, a
+cassette `DeviceType`, and one row per destination rack (each with a
+fibre range, cable length, and either a "create new cassette" or
+"reuse existing device" choice). On confirm the view writes — inside
+a single `transaction.atomic()` — one `FibreTrunk` parent row, N
+`dcim.Device` cassettes, N `dcim.Cable`s connecting the source
+RearPort to each destination's RearPort, and N `TrunkBreakout` rows
+binding the cables to the trunk at the chosen fibre ranges. Any
+validation failure (overlapping ranges, rack-position collision,
+unavailable port) rolls back the entire batch. The flow contains no
+new database models — it is pure orchestration over PR A's
+`FibreTrunk`, PR B's `TrunkBreakout`, and core `dcim.Device` /
+`dcim.Cable`.

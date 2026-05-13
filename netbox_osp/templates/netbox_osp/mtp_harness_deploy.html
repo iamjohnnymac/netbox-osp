@@ -1,0 +1,99 @@
+{% extends 'base/layout.html' %}
+{% load helpers %}
+{% load form_helpers %}
+
+{% block title %}Deploy MTP Harness{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <h2>Deploy MTP Harness</h2>
+        <p class="text-muted">
+            One form submit deploys an entire inter-rack fibre harness: a
+            parent <code>FibreTrunk</code> + N cassette devices + N native
+            <code>dcim.Cable</code>s linking the source patch-panel RearPort
+            to each destination + N <code>TrunkBreakout</code> rows binding
+            the cables to the trunk at chosen fibre ranges. The whole batch
+            is applied atomically — if any row fails validation, nothing is
+            saved. After submit you'll see a preview before anything hits
+            the database.
+        </p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="card mb-3">
+                <h5 class="card-header">Trunk metadata</h5>
+                <div class="card-body">
+                    {% render_field form.trunk_cid %}
+                    {% render_field form.trunk_type %}
+                    {% render_field form.fibre_count %}
+                    {% render_field form.length_m %}
+                    {% render_field form.manufacturer %}
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <h5 class="card-header">Source patch panel</h5>
+                <div class="card-body">
+                    {% render_field form.source_rack %}
+                    {% render_field form.source_device %}
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <h5 class="card-header">Cassette &amp; cable defaults</h5>
+                <div class="card-body">
+                    {% render_field form.cassette_device_type %}
+                    {% render_field form.cassette_device_role %}
+                    {% render_field form.cable_type %}
+                    {% render_field form.default_cable_length_m %}
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <h5 class="card-header">Destinations</h5>
+                <div class="card-body">
+                    {{ formset.management_form }}
+                    {% if formset.non_form_errors %}
+                        <div class="alert alert-danger">
+                            {{ formset.non_form_errors }}
+                        </div>
+                    {% endif %}
+                    {% for dest_form in formset %}
+                        <div class="card mb-3">
+                            <div class="card-header">Destination {{ forloop.counter }}</div>
+                            <div class="card-body">
+                                {% if dest_form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ dest_form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+                                {% for field in dest_form %}
+                                    {% render_field field %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="mdi mdi-eye"></i> Preview
+                </button>
+                <a href="{% url 'plugins:netbox_osp:fibretrunk_list' %}"
+                   class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

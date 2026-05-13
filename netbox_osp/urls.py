@@ -115,6 +115,8 @@ urlpatterns = [
     path("trunks/edit/", views.FibreTrunkBulkEditView.as_view(), name="fibretrunk_bulk_edit"),
     path("trunks/delete/", views.FibreTrunkBulkDeleteView.as_view(), name="fibretrunk_bulk_delete"),
     path("trunks/import/", views.FibreTrunkBulkImportView.as_view(), name="fibretrunk_import"),
+    path("trunks/deploy-harness/",
+         views.MtpHarnessDeployView.as_view(), name="mtp_harness_deploy"),
     path("trunks/<int:pk>/", views.FibreTrunkView.as_view(), name="fibretrunk"),
     path("trunks/<int:pk>/edit/", views.FibreTrunkEditView.as_view(), name="fibretrunk_edit"),
     path("trunks/<int:pk>/delete/", views.FibreTrunkDeleteView.as_view(), name="fibretrunk_delete"),
