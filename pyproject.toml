@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-osp"
-version = "0.1.0"
+version = "0.1.1"
 description = "Outside-plant fibre management for NetBox — cables, splice closures, fibre links with loss budgets, and an offline-capable Leaflet plant map."
-authors = [{ name = "John McKenzie", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
-maintainers = [{ name = "John McKenzie", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
+authors = [{ name = "John McKean", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
+maintainers = [{ name = "John McKean", email = "33052970+iamjohnnymac@users.noreply.github.com" }]
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

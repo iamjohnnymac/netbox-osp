@@ -4,7 +4,7 @@ site_url: https://iamjohnnymac.github.io/netbox-osp/
 repo_url: https://github.com/iamjohnnymac/netbox-osp
 repo_name: iamjohnnymac/netbox-osp
 edit_uri: edit/main/docs/
-copyright: Copyright &copy; 2026 John McKenzie
+copyright: Copyright &copy; 2026 John McKean
 
 theme:
   name: material
