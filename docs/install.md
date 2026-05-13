@@ -2,7 +2,9 @@
 
 ## Requirements
 
-- NetBox **4.5.x** or **4.6.x**
+- NetBox **4.6.x** (4.5 support is blocked by a `dcim` migration node that
+  exists only in 4.6+; will be relaxed once the migration is regenerated
+  against an earlier dcim baseline)
 - Python **3.12** or newer
 
 ## From PyPI

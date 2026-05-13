@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.12", "3.13"]
-        netbox: ["v4.5.10", "v4.6.0"]
+        netbox: ["v4.6.0"]
 
     services:
       postgres:

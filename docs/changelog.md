@@ -23,7 +23,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Public GitHub repo with `release.yml` workflow using PyPI Trusted
   Publishing via OIDC (no API tokens).
-- `test.yml` matrix: Python 3.12/3.13 × NetBox 4.5/4.6.
+- `test.yml` matrix: Python 3.12/3.13 × NetBox 4.6.
 - `docs.yml` deploying MkDocs Material to GitHub Pages.
 - `.pre-commit-config.yaml` with ruff (lint + format).
 

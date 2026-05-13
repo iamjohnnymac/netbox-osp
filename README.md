@@ -39,7 +39,7 @@ python manage.py migrate
 python manage.py collectstatic --no-input
 ```
 
-NetBox 4.5.x or 4.6.x is required.
+NetBox 4.6.x is required.
 
 ## Features
 

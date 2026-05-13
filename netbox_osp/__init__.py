@@ -9,7 +9,7 @@ class NetBoxOspConfig(PluginConfig):
     author = "John McKenzie"
     author_email = "33052970+iamjohnnymac@users.noreply.github.com"
     base_url = "osp"
-    min_version = "4.5.0"
+    min_version = "4.6.0"
     max_version = "4.6.99"
 
     default_settings = {
