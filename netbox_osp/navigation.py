@@ -1,22 +1,33 @@
-from netbox.plugins import PluginMenu, PluginMenuItem, PluginMenuButton
+from netbox.plugins import PluginMenu, PluginMenuButton, PluginMenuItem
 
 
-cable_buttons = (
-    PluginMenuButton(
-        link="plugins:netbox_osp:ospcable_add",
-        title="Add",
-        icon_class="mdi mdi-plus-thick",
-    ),
-)
+def _add_import_buttons(slug: str):
+    """Return (Add, Import) PluginMenuButton tuple for a model URL slug.
 
-closure_buttons = (
-    PluginMenuButton(
-        link="plugins:netbox_osp:spliceclosure_add",
-        title="Add",
-        icon_class="mdi mdi-plus-thick",
-    ),
-)
+    Convention: every list page that has create + bulk-import gets a pair
+    of buttons in the sidebar, matching the (+, upload) UX used by mature
+    NetBox plugins.
+    """
+    return (
+        PluginMenuButton(
+            link=f"plugins:netbox_osp:{slug}_add",
+            title="Add",
+            icon_class="mdi mdi-plus-thick",
+        ),
+        PluginMenuButton(
+            link=f"plugins:netbox_osp:{slug}_import",
+            title="Import",
+            icon_class="mdi mdi-upload",
+        ),
+    )
 
+
+cable_buttons = _add_import_buttons("ospcable")
+tube_buttons = _add_import_buttons("tube")
+strand_buttons = _add_import_buttons("strand")
+closure_buttons = _add_import_buttons("spliceclosure")
+tray_buttons = _add_import_buttons("splicetray")
+splice_buttons = _add_import_buttons("splice")
 link_buttons = (
     PluginMenuButton(
         link="plugins:netbox_osp:fibrelink_add",
@@ -24,6 +35,7 @@ link_buttons = (
         icon_class="mdi mdi-plus-thick",
     ),
 )
+
 
 menu = PluginMenu(
     label="OSP",
@@ -44,10 +56,12 @@ menu = PluginMenu(
             PluginMenuItem(
                 link="plugins:netbox_osp:tube_list",
                 link_text="Tubes",
+                buttons=tube_buttons,
             ),
             PluginMenuItem(
                 link="plugins:netbox_osp:strand_list",
                 link_text="Strands",
+                buttons=strand_buttons,
             ),
         )),
         ("Splices", (
@@ -59,10 +73,12 @@ menu = PluginMenu(
             PluginMenuItem(
                 link="plugins:netbox_osp:splicetray_list",
                 link_text="Splice Trays",
+                buttons=tray_buttons,
             ),
             PluginMenuItem(
                 link="plugins:netbox_osp:splice_list",
                 link_text="Splices",
+                buttons=splice_buttons,
             ),
         )),
         ("Logical", (

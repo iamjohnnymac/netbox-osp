@@ -102,6 +102,25 @@ class TubeDeleteView(generic.ObjectDeleteView):
     queryset = models.Tube.objects.all()
 
 
+class TubeBulkEditView(generic.BulkEditView):
+    queryset = models.Tube.objects.select_related("cable").all()
+    filterset = filtersets.TubeFilterSet
+    table = tables.TubeTable
+    form = forms.TubeBulkEditForm
+
+
+class TubeBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Tube.objects.select_related("cable").all()
+    filterset = filtersets.TubeFilterSet
+    table = tables.TubeTable
+
+
+class TubeBulkImportView(generic.BulkImportView):
+    queryset = models.Tube.objects.all()
+    model_form = forms.TubeImportForm
+    table = tables.TubeTable
+
+
 # ============================================================================
 # Strand
 # ============================================================================
@@ -124,6 +143,25 @@ class StrandEditView(generic.ObjectEditView):
 
 class StrandDeleteView(generic.ObjectDeleteView):
     queryset = models.Strand.objects.all()
+
+
+class StrandBulkEditView(generic.BulkEditView):
+    queryset = models.Strand.objects.select_related("cable", "tube").all()
+    filterset = filtersets.StrandFilterSet
+    table = tables.StrandTable
+    form = forms.StrandBulkEditForm
+
+
+class StrandBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Strand.objects.select_related("cable", "tube").all()
+    filterset = filtersets.StrandFilterSet
+    table = tables.StrandTable
+
+
+class StrandBulkImportView(generic.BulkImportView):
+    queryset = models.Strand.objects.all()
+    model_form = forms.StrandImportForm
+    table = tables.StrandTable
 
 
 # ============================================================================
@@ -156,6 +194,25 @@ class SpliceClosureDeleteView(generic.ObjectDeleteView):
     queryset = models.SpliceClosure.objects.all()
 
 
+class SpliceClosureBulkEditView(generic.BulkEditView):
+    queryset = models.SpliceClosure.objects.all()
+    filterset = filtersets.SpliceClosureFilterSet
+    table = tables.SpliceClosureTable
+    form = forms.SpliceClosureBulkEditForm
+
+
+class SpliceClosureBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.SpliceClosure.objects.all()
+    filterset = filtersets.SpliceClosureFilterSet
+    table = tables.SpliceClosureTable
+
+
+class SpliceClosureBulkImportView(generic.BulkImportView):
+    queryset = models.SpliceClosure.objects.all()
+    model_form = forms.SpliceClosureImportForm
+    table = tables.SpliceClosureTable
+
+
 # ============================================================================
 # SpliceTray
 # ============================================================================
@@ -164,7 +221,9 @@ class SpliceTrayView(generic.ObjectView):
     queryset = models.SpliceTray.objects.all()
 
     def get_extra_context(self, request, instance):
-        splices = instance.splices.order_by("position").select_related("strand_a__cable", "strand_b__cable")
+        splices = instance.splices.order_by("position").select_related(
+            "strand_a__cable", "strand_b__cable"
+        )
         splice_table = tables.SpliceTable(splices)
         splice_table.configure(request)
         return {"splice_table": splice_table}
@@ -184,6 +243,25 @@ class SpliceTrayEditView(generic.ObjectEditView):
 
 class SpliceTrayDeleteView(generic.ObjectDeleteView):
     queryset = models.SpliceTray.objects.all()
+
+
+class SpliceTrayBulkEditView(generic.BulkEditView):
+    queryset = models.SpliceTray.objects.select_related("closure").all()
+    filterset = filtersets.SpliceTrayFilterSet
+    table = tables.SpliceTrayTable
+    form = forms.SpliceTrayBulkEditForm
+
+
+class SpliceTrayBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.SpliceTray.objects.select_related("closure").all()
+    filterset = filtersets.SpliceTrayFilterSet
+    table = tables.SpliceTrayTable
+
+
+class SpliceTrayBulkImportView(generic.BulkImportView):
+    queryset = models.SpliceTray.objects.all()
+    model_form = forms.SpliceTrayImportForm
+    table = tables.SpliceTrayTable
 
 
 # ============================================================================
@@ -208,6 +286,25 @@ class SpliceEditView(generic.ObjectEditView):
 
 class SpliceDeleteView(generic.ObjectDeleteView):
     queryset = models.Splice.objects.all()
+
+
+class SpliceBulkEditView(generic.BulkEditView):
+    queryset = models.Splice.objects.select_related("tray__closure").all()
+    filterset = filtersets.SpliceFilterSet
+    table = tables.SpliceTable
+    form = forms.SpliceBulkEditForm
+
+
+class SpliceBulkDeleteView(generic.BulkDeleteView):
+    queryset = models.Splice.objects.select_related("tray__closure").all()
+    filterset = filtersets.SpliceFilterSet
+    table = tables.SpliceTable
+
+
+class SpliceBulkImportView(generic.BulkImportView):
+    queryset = models.Splice.objects.all()
+    model_form = forms.SpliceImportForm
+    table = tables.SpliceTable
 
 
 # ============================================================================
@@ -239,7 +336,7 @@ class FibreLinkDeleteView(generic.ObjectDeleteView):
 
 
 # ============================================================================
-# Network Map
+# Map (full-screen + GeoJSON data + tile proxy)
 # ============================================================================
 
 class NetworkMapView(LoginRequiredMixin, View):
@@ -269,128 +366,92 @@ class NetworkMapDataView(LoginRequiredMixin, View):
         statuses = request.GET.getlist("status")
         types = request.GET.getlist("type")
 
-        cables_qs = models.OspCable.objects.select_related("site_a", "site_b")
+        site_qs = Site.objects.all()
+        cable_qs = models.OspCable.objects.select_related("site_a", "site_b").all()
+        closure_qs = models.SpliceClosure.objects.select_related("site").all()
+
         if site_ids:
-            cables_qs = cables_qs.filter(
-                Q(site_a_id__in=site_ids) | Q(site_b_id__in=site_ids)
-            )
+            site_qs = site_qs.filter(pk__in=site_ids)
+            cable_qs = cable_qs.filter(Q(site_a__in=site_ids) | Q(site_b__in=site_ids))
+            closure_qs = closure_qs.filter(site__in=site_ids)
         if statuses:
-            cables_qs = cables_qs.filter(status__in=statuses)
+            cable_qs = cable_qs.filter(status__in=statuses)
+            closure_qs = closure_qs.filter(status__in=statuses)
         if types:
-            cables_qs = cables_qs.filter(type__in=types)
+            cable_qs = cable_qs.filter(type__in=types)
 
-        # Only surface sites that actually appear as an OSP cable endpoint —
-        # otherwise the map auto-fit pulls in unrelated sites (e.g. a remote
-        # admin office) and zooms way out past the tile coverage area.
-        cable_site_ids = set(cables_qs.values_list("site_a_id", flat=True)) | set(
-            cables_qs.values_list("site_b_id", flat=True)
-        )
-        sites_qs = (
-            Site.objects
-            .filter(pk__in=cable_site_ids)
-            .exclude(latitude__isnull=True)
-            .exclude(longitude__isnull=True)
-        )
-        if site_ids:
-            sites_qs = sites_qs.filter(pk__in=site_ids)
-        closures_qs = models.SpliceClosure.objects.exclude(location_point__isnull=True)
-
-        return JsonResponse(build_map_geojson(sites_qs, cables_qs, closures_qs))
+        geojson = build_map_geojson(site_qs, cable_qs, closure_qs)
+        return JsonResponse(geojson)
 
 
-# ============================================================================
-# Tile proxy (offline MBTiles)
-# ============================================================================
+# ----------------------------------------------------------------------------
+# Tile proxy — serves PNG / JPEG / WebP tiles from one or more MBTiles files.
+# ----------------------------------------------------------------------------
 
-import threading
+_TILE_DB_CACHE = {}                 # thread-local in _open_mbtiles
+_TILE_CONN_CACHE = {}               # thread-local connections per file
 
-_MBTILES_LOCAL = threading.local()
+_MIME_BY_EXT = {
+    "png":  "image/png",
+    "jpg":  "image/jpeg",
+    "jpeg": "image/jpeg",
+    "webp": "image/webp",
+}
 
 
-def _open_mbtiles(path):
-    """Open one connection per thread per file. SQLite is fine for read-only
-    concurrent access as long as each thread has its own handle."""
-    cache = getattr(_MBTILES_LOCAL, "conns", None)
-    if cache is None:
-        cache = {}
-        _MBTILES_LOCAL.conns = cache
-    conn = cache.get(path)
+def _open_mbtiles(path: Path) -> sqlite3.Connection:
+    """Return a thread-local sqlite3 connection for the given file."""
+    import threading
+    tls = getattr(_open_mbtiles, "_tls", None)
+    if tls is None:
+        tls = threading.local()
+        _open_mbtiles._tls = tls
+    key = str(path)
+    conn = getattr(tls, "conns", {}).get(key)
     if conn is None:
-        conn = sqlite3.connect(path, check_same_thread=False, uri=False)
-        cache[path] = conn
+        conn = sqlite3.connect(str(path), check_same_thread=False)
+        if not hasattr(tls, "conns"):
+            tls.conns = {}
+        tls.conns[key] = conn
     return conn
 
 
 class TileProxyView(LoginRequiredMixin, View):
-    """Serve a single tile from a bundled MBTiles file.
-
-    MBTiles uses TMS y-axis (origin bottom-left); Leaflet uses XYZ (top-left).
-    Convert: tms_y = (2^z - 1) - y.
-
-    Lookup order:
-      1. MEDIA_ROOT/osp_tiles/*.mbtiles (user-supplied high-res overlays)
-      2. <plugin>/static/netbox_osp/tiles/basemap.mbtiles
-    """
+    """Serve a single tile from the first MBTiles bundle that has it."""
 
     def get(self, request, z, x, y, ext):
-        if ext.lower() not in ("png", "jpg", "jpeg", "webp"):
-            return HttpResponseNotFound("unsupported tile extension")
+        ext = ext.lower()
+        if ext not in _MIME_BY_EXT:
+            return HttpResponseNotFound("Unsupported tile extension.")
 
+        # MBTiles stores rows TMS-style (origin bottom-left); incoming y is XYZ.
         tms_y = (1 << z) - 1 - y
-
         candidate_paths = []
         media_dir = Path(getattr(settings, "MEDIA_ROOT", "/opt/netbox/netbox/media")) / "osp_tiles"
         if media_dir.is_dir():
             candidate_paths.extend(sorted(media_dir.glob("*.mbtiles")))
         plugin_tiles = Path(__file__).parent / "static" / "netbox_osp" / "tiles"
         if plugin_tiles.is_dir():
-            # All *.mbtiles in the plugin tiles dir, alpha-sorted, but with
-            # basemap.mbtiles forced last so real-imagery bundles override
-            # the stub fallback when keys overlap (e.g. z=0).
             files = [p for p in plugin_tiles.glob("*.mbtiles") if p.name != "basemap.mbtiles"]
             candidate_paths.extend(sorted(files))
             basemap = plugin_tiles / "basemap.mbtiles"
             if basemap.is_file():
                 candidate_paths.append(basemap)
 
-        tile_blob = None
-        for p in candidate_paths:
+        for path in candidate_paths:
             try:
-                conn = _open_mbtiles(str(p))
-                row = conn.execute(
-                    "SELECT tile_data FROM tiles "
-                    "WHERE zoom_level=? AND tile_column=? AND tile_row=?",
+                conn = _open_mbtiles(path)
+                cur = conn.execute(
+                    "SELECT tile_data FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?",
                     (z, x, tms_y),
-                ).fetchone()
-                if row is not None:
-                    tile_blob = row[0]
-                    break
+                )
+                row = cur.fetchone()
+                if row:
+                    response = HttpResponse(row[0], content_type=_MIME_BY_EXT[ext])
+                    response["Cache-Control"] = "public, max-age=86400"
+                    return response
             except sqlite3.Error:
                 continue
 
-        if tile_blob is None:
-            # 1x1 transparent PNG so the map doesn't show 404s in F12
-            blank = bytes.fromhex(
-                "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
-                "890000000d49444154789c63600000000005000160d4a83f0000000049454e44"
-                "ae426082"
-            )
-            resp = HttpResponse(blank, content_type="image/png")
-            resp["Cache-Control"] = "public, max-age=86400"
-            return resp
-
-        etag = hashlib.md5(tile_blob).hexdigest()
-        if request.META.get("HTTP_IF_NONE_MATCH") == f'"{etag}"':
-            return HttpResponse(status=304)
-
-        if ext.lower() in ("jpg", "jpeg"):
-            content_type = "image/jpeg"
-        elif ext.lower() == "webp":
-            content_type = "image/webp"
-        else:
-            content_type = "image/png"
-
-        resp = HttpResponse(tile_blob, content_type=content_type)
-        resp["ETag"] = f'"{etag}"'
-        resp["Cache-Control"] = "public, max-age=31536000, immutable"
-        return resp
+        # No bundle had this tile.
+        return HttpResponseNotFound(f"No tile at z={z} x={x} y={y}")
