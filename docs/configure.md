@@ -12,6 +12,35 @@ All settings live under `PLUGINS_CONFIG["netbox_osp"]` in your NetBox
 | `default_connector_loss_db` | `0.30` | Per-connector loss applied at each end of every `FibreLink`. |
 | `map_default_center` | `[0.0, 0.0]` | `[lat, lon]` for the default map view. Set this to the lat/lon of your area of interest. |
 | `map_default_zoom` | `2` | Default Leaflet zoom level. `13`–`16` is appropriate for site-scale viewing. |
+| `plant_boundary` | `None` | Optional closed polygon (list of `[lon, lat]` vertices, GeoJSON order). If set, `OspCable.clean()` rejects any cable whose `route` vertices fall outside this polygon. See [Plant boundary](#plant-boundary) below. |
+
+## Plant boundary
+
+If you configure `plant_boundary`, every `OspCable.clean()` validates that the
+cable's `route` (a GeoJSON `LineString`) lies entirely inside the polygon —
+catches operator slips when re-routing cables on the map. The ring is closed
+implicitly; the last vertex does **not** need to repeat the first.
+
+```python
+"netbox_osp": {
+    # ... other settings ...
+    "plant_boundary": [
+        # [lon, lat] — GeoJSON order, NOT Leaflet's [lat, lon].
+        # Example placeholder — replace with the vertices of your own plant.
+        [10.000, 50.000],
+        [10.010, 50.000],
+        [10.010, 50.010],
+        [10.000, 50.010],
+    ],
+}
+```
+
+Tip: use the **Trace** tool on the network map (`/plugins/osp/map/`) to draw
+the boundary visually and copy the resulting coordinate list into your
+`plugins.py`.
+
+If `plant_boundary` is unset or `None`, no validation occurs and cables can
+route anywhere on the globe.
 
 ## Base map tiles
 

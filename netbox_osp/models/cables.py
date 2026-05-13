@@ -1,3 +1,4 @@
+from django.conf import settings as dj_settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -13,7 +14,11 @@ from ..choices import (
     StrandStatusChoices,
     TIA598ColorChoices,
 )
-from ._geo import linestring_length_m, validate_linestring
+from ._geo import (
+    linestring_length_m,
+    validate_linestring,
+    validate_route_within_boundary,
+)
 
 
 class OspCable(NetBoxModel):
@@ -110,7 +115,22 @@ class OspCable(NetBoxModel):
     def clean(self):
         super().clean()
         if self.route is not None:
-            validate_linestring(self.route)
+            # Wrap shape-validation so the error surfaces on the `route`
+            # form field rather than as a non-field error.
+            try:
+                validate_linestring(self.route)
+            except ValidationError as exc:
+                raise ValidationError({"route": exc.message}) from exc
+            # Optional plant-boundary check — only enforced when the operator
+            # configures PLUGINS_CONFIG['netbox_osp']['plant_boundary'] as a
+            # closed polygon of [lon, lat] vertices.
+            plugin_config = dj_settings.PLUGINS_CONFIG.get("netbox_osp", {})
+            boundary = plugin_config.get("plant_boundary")
+            if boundary:
+                try:
+                    validate_route_within_boundary(self.route, boundary)
+                except ValidationError as exc:
+                    raise ValidationError({"route": exc.message}) from exc
         if self.tube_count and self.fibres_per_tube:
             expected = self.tube_count * self.fibres_per_tube
             if self.fibre_count and expected != self.fibre_count:

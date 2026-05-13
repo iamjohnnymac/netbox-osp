@@ -10,9 +10,11 @@ from django.test import TestCase
 
 from netbox_osp.models._geo import (
     linestring_length_m,
+    point_in_polygon,
     site_to_point,
     validate_linestring,
     validate_point,
+    validate_route_within_boundary,
 )
 
 
@@ -241,3 +243,105 @@ class SiteToPointTests(TestCase):
         self.assertIsNotNone(point)
         self.assertIsInstance(point["coordinates"][0], float)
         self.assertIsInstance(point["coordinates"][1], float)
+
+
+# Convenience: 1° x 1° square in the lower-left of the [0..2, 0..2] quadrant.
+# Polygon vertices in GeoJSON [lon, lat] order.
+SQUARE_POLYGON = [
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [1.0, 1.0],
+    [0.0, 1.0],
+]
+
+
+class PointInPolygonTests(TestCase):
+    def test_inside_centre(self):
+        self.assertTrue(point_in_polygon([0.5, 0.5], SQUARE_POLYGON))
+
+    def test_outside_right(self):
+        self.assertFalse(point_in_polygon([1.5, 0.5], SQUARE_POLYGON))
+
+    def test_outside_below(self):
+        self.assertFalse(point_in_polygon([0.5, -0.5], SQUARE_POLYGON))
+
+    def test_outside_above(self):
+        self.assertFalse(point_in_polygon([0.5, 1.5], SQUARE_POLYGON))
+
+    def test_outside_left(self):
+        self.assertFalse(point_in_polygon([-0.5, 0.5], SQUARE_POLYGON))
+
+    def test_concave_polygon(self):
+        # A C-shape: inside the C's notch should be OUTSIDE the polygon.
+        # Vertices in order, forming the inside of a "C" missing a square bite.
+        c_shape = [
+            [0.0, 0.0],
+            [2.0, 0.0],
+            [2.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+            [2.0, 2.0],
+            [2.0, 3.0],
+            [0.0, 3.0],
+        ]
+        self.assertTrue(point_in_polygon([0.5, 1.5], c_shape))   # inside the spine
+        self.assertFalse(point_in_polygon([1.5, 1.5], c_shape))  # inside the bite
+
+    def test_degenerate_polygon_returns_false(self):
+        self.assertFalse(point_in_polygon([0.5, 0.5], [[0.0, 0.0], [1.0, 0.0]]))
+        self.assertFalse(point_in_polygon([0.5, 0.5], []))
+        self.assertFalse(point_in_polygon([0.5, 0.5], None))
+
+    def test_malformed_point_returns_false(self):
+        self.assertFalse(point_in_polygon([0.5], SQUARE_POLYGON))
+        self.assertFalse(point_in_polygon(None, SQUARE_POLYGON))
+        self.assertFalse(point_in_polygon("nope", SQUARE_POLYGON))
+
+
+class ValidateRouteWithinBoundaryTests(TestCase):
+    def test_skips_when_no_boundary(self):
+        # Should never raise — boundary is optional.
+        validate_route_within_boundary(
+            {"type": "LineString", "coordinates": [[0.5, 0.5], [99.0, 99.0]]},
+            None,
+        )
+        validate_route_within_boundary(
+            {"type": "LineString", "coordinates": [[0.5, 0.5], [99.0, 99.0]]},
+            [],
+        )
+
+    def test_skips_when_no_route(self):
+        validate_route_within_boundary(None, SQUARE_POLYGON)
+        validate_route_within_boundary({}, SQUARE_POLYGON)
+
+    def test_route_fully_inside_is_ok(self):
+        validate_route_within_boundary(
+            {"type": "LineString", "coordinates": [[0.25, 0.25], [0.75, 0.75]]},
+            SQUARE_POLYGON,
+        )
+
+    def test_route_with_outside_vertex_raises(self):
+        with self.assertRaises(ValidationError) as cm:
+            validate_route_within_boundary(
+                {"type": "LineString", "coordinates": [[0.5, 0.5], [1.5, 1.5]]},
+                SQUARE_POLYGON,
+            )
+        # The error should mention the vertex index that broke (1 here).
+        msg = str(cm.exception)
+        self.assertIn("vertex 1", msg)
+
+    def test_route_with_only_outside_first_vertex_raises(self):
+        with self.assertRaises(ValidationError) as cm:
+            validate_route_within_boundary(
+                {"type": "LineString", "coordinates": [[-1.0, -1.0], [0.5, 0.5]]},
+                SQUARE_POLYGON,
+            )
+        msg = str(cm.exception)
+        self.assertIn("vertex 0", msg)
+
+    def test_degenerate_boundary_is_ignored(self):
+        # A 2-vertex "polygon" can't enclose anything — skip the check.
+        validate_route_within_boundary(
+            {"type": "LineString", "coordinates": [[99.0, 99.0]]},
+            [[0.0, 0.0], [1.0, 0.0]],
+        )
