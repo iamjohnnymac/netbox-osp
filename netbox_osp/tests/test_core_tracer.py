@@ -247,13 +247,11 @@ class StrandTraceViewTests(DjangoTestCase):
         self.assertIn(resp.status_code, (302, 403))
 
     def test_authenticated_user_sees_trace_page(self):
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        user = User.objects.create_user(
-            username="trace-tester", password="x",  # noqa: S106
-            is_staff=True, is_active=True,
-        )
-        self.client.force_login(user)
+        # Reuse NetBox's TestCase pre-wired user (avoids the custom
+        # create_user signature on NetBox 4.6's User model).
+        from utilities.testing import create_test_user
+
+        self.client.force_login(create_test_user("trace-tester"))
         url = reverse(
             "plugins:netbox_osp:strand_trace",
             args=[self.universe["start"].pk],
@@ -285,12 +283,11 @@ class TraceButtonTemplateExtensionTests(DjangoTestCase):
         cls.universe = _make_universe(prefix="TC1")
 
     def test_strand_detail_page_includes_trace_button(self):
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        user = User.objects.create_user(
-            username="tc-tester", password="x",  # noqa: S106
-            is_staff=True, is_superuser=True, is_active=True,
-        )
+        from utilities.testing import create_test_user
+
+        user = create_test_user("tc-tester")
+        user.is_superuser = True
+        user.save()
         self.client.force_login(user)
         url = reverse(
             "plugins:netbox_osp:strand",
