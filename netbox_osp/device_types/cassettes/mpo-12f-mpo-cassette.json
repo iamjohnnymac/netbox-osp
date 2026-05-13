@@ -1,0 +1,15 @@
+{
+  "manufacturer": "Generic",
+  "model": "MPO-12F-MPO Cassette",
+  "slug": "mpo-12f-mpo-cassette",
+  "u_height": 0,
+  "is_full_depth": false,
+  "subdevice_role": null,
+  "comments": "Generic 12-fibre MPO pass-through cassette. 1× MPO (12 pos) rear, 1× MPO (12 pos) front. Use with netbox-osp MTP harness deploy.",
+  "rear-ports": [
+    {"name": "mpo-rear", "type": "mpo", "positions": 12}
+  ],
+  "front-ports": [
+    {"name": "mpo-front", "type": "mpo", "positions": 12, "rear_port": "mpo-rear", "rear_port_position": 1}
+  ]
+}

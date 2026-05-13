@@ -1,0 +1,39 @@
+{
+  "manufacturer": "Generic",
+  "model": "1U LC 24F Patch Panel",
+  "slug": "ru1-lc-24f-panel",
+  "u_height": 1,
+  "is_full_depth": false,
+  "subdevice_role": null,
+  "comments": "Generic 1U 24-fibre LC patch panel. 2× MPO (12 pos each) rear, 24× LC front. Use with netbox-osp MTP harness deploy.",
+  "rear-ports": [
+    {"name": "mpo-1", "type": "mpo", "positions": 12},
+    {"name": "mpo-2", "type": "mpo", "positions": 12}
+  ],
+  "front-ports": [
+    {"name": "1",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 1},
+    {"name": "2",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 2},
+    {"name": "3",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 3},
+    {"name": "4",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 4},
+    {"name": "5",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 5},
+    {"name": "6",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 6},
+    {"name": "7",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 7},
+    {"name": "8",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 8},
+    {"name": "9",  "type": "lc", "rear_port": "mpo-1", "rear_port_position": 9},
+    {"name": "10", "type": "lc", "rear_port": "mpo-1", "rear_port_position": 10},
+    {"name": "11", "type": "lc", "rear_port": "mpo-1", "rear_port_position": 11},
+    {"name": "12", "type": "lc", "rear_port": "mpo-1", "rear_port_position": 12},
+    {"name": "13", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 1},
+    {"name": "14", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 2},
+    {"name": "15", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 3},
+    {"name": "16", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 4},
+    {"name": "17", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 5},
+    {"name": "18", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 6},
+    {"name": "19", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 7},
+    {"name": "20", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 8},
+    {"name": "21", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 9},
+    {"name": "22", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 10},
+    {"name": "23", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 11},
+    {"name": "24", "type": "lc", "rear_port": "mpo-2", "rear_port_position": 12}
+  ]
+}
