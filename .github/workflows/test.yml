@@ -95,8 +95,8 @@ jobs:
           }
           SECRET_KEY = "ci-only-do-not-use-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
           # API_TOKEN_PEPPERS is required by NetBox 4.6 to hash v2 API tokens.
-          # CI uses a placeholder pepper — never reuse this anywhere real.
-          API_TOKEN_PEPPERS = ["ci-only-pepper-do-not-reuse-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+          # Dict keyed by pepper id, value is the bytes. CI placeholder only.
+          API_TOKEN_PEPPERS = {"ci": "ci-only-pepper-do-not-reuse-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
           PLUGINS = ["netbox_osp"]
           PLUGINS_CONFIG = {"netbox_osp": {}}
           EOF
