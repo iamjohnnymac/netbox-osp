@@ -176,9 +176,11 @@ class FibreTrunkGraphQLSmokeTests(DjangoTestCase):
 
     def test_schema_module_exposes_fibre_trunk_query(self):
         mod = importlib.import_module("netbox_osp.graphql.schema")
-        # The Query class lives at the module level as NetBoxOspQuery.
+        # @strawberry.type rewrites class attributes into descriptors that
+        # don't surface via hasattr(); check __annotations__ instead.
         query_cls = mod.NetBoxOspQuery
-        self.assertTrue(
-            hasattr(query_cls, "osp_fibre_trunk_list"),
-            "schema Query class missing osp_fibre_trunk_list",
+        self.assertIn(
+            "osp_fibre_trunk_list",
+            query_cls.__annotations__,
+            "schema Query class missing osp_fibre_trunk_list annotation",
         )
