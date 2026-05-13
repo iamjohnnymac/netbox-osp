@@ -587,6 +587,32 @@ class TrunkImportFromCablesView(LoginRequiredMixin, PermissionRequiredMixin, Vie
 # this view can't be replayed against another signed-state endpoint.
 _HARNESS_STATE_SIGNER = TimestampSigner(salt="netbox_osp.mtp_harness.preview")
 
+
+def _free_rear_ports_for_device(device):
+    """Return RearPorts on `device` that aren't cabled yet, ordered by name.
+
+    NetBox 4.6 wires cables to terminations via CableTermination
+    (GenericForeignKey), not a direct FK on RearPort. So we need an
+    inverse-pk exclusion rather than `cable__isnull=True`.
+    """
+    from django.contrib.contenttypes.models import ContentType
+
+    from dcim.models import CableTermination, RearPort
+
+    rp_ct = ContentType.objects.get_for_model(RearPort)
+    cabled_pks = list(
+        CableTermination.objects
+        .filter(termination_type=rp_ct)
+        .values_list("termination_id", flat=True)
+    )
+    return RearPort.objects.filter(device=device).exclude(
+        pk__in=cabled_pks
+    ).order_by("name")
+
+
+def _count_free_rear_ports(device):
+    return _free_rear_ports_for_device(device).count()
+
 # Max age (seconds) for a preview-state token. The operator has ten
 # minutes between previewing and confirming, after which they have to
 # re-validate. Defends against stale tabs.
@@ -722,14 +748,13 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 break
 
         # 4. Source device has enough free RearPorts for all destinations.
-        # Each destination consumes one source-side RearPort.
+        # Each destination consumes one source-side RearPort. NetBox 4.6
+        # stores cable terminations via GenericForeignKey on
+        # CableTermination, so we filter by the inverse-pk set rather
+        # than the (non-existent) cable FK on RearPort itself.
         source_device = parent_form.cleaned_data.get("source_device")
         if source_device is not None:
-            from dcim.models import RearPort
-            free_count = RearPort.objects.filter(
-                device=source_device,
-                cable__isnull=True,
-            ).count()
+            free_count = _count_free_rear_ports(source_device)
             if free_count < len(cleaned_rows):
                 parent_form.add_error(
                     "source_device",
@@ -918,13 +943,9 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # alphabetical by RearPort name. _validate_harness() has already
         # confirmed there are enough free ports — but keep this guard so
         # a race between preview and confirm fails cleanly.
-        from dcim.models import RearPort
         source_device = parent_resolved["source_device"]
         source_rps = list(
-            RearPort.objects.filter(
-                device=source_device,
-                cable__isnull=True,
-            ).order_by("name")[:len(rows_resolved)]
+            _free_rear_ports_for_device(source_device)[:len(rows_resolved)]
         )
         if len(source_rps) < len(rows_resolved):
             raise ValidationError({
