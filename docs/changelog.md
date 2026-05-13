@@ -41,6 +41,21 @@ Per-release NetBox / Python compatibility lives on the
   bind of unbound `dcim.Cable`s to fibre ranges.
 - **REST + GraphQL** for `TrunkBreakout`.
 - **CSV bulk import** keyed by `trunk_cid` + `cable_label`.
+- **Bundled cassette catalogue** — five `DeviceType` JSON templates at
+  `netbox_osp/device_types/cassettes/` covering the standard MPO/MTP
+  fibre-cassette and LC patch-panel shapes:
+  `mpo-12f-lc-cassette`, `mpo-24f-lc-cassette`, `mpo-12f-mpo-cassette`,
+  `lgx-lc-12f-panel`, `ru1-lc-24f-panel`. Files follow the
+  `netbox-community/devicetype-library` schema and pair with the
+  `MtpHarness` deploy form.
+- **`load_osp_cassettes` management command** — seeds all five
+  cassettes idempotently:
+
+      python manage.py load_osp_cassettes
+
+  Slug-keyed `update_or_create`, atomic per cassette, materialises
+  `RearPortTemplate` + `FrontPortTemplate` + `PortTemplateMapping`
+  rows. `--dry-run` flag for safe inspection.
 - **Visual core tracer** (PR E) — click "Trace this core" on a `Strand`,
   `dcim.FrontPort`, or `dcim.Interface` detail page to render an
   end-to-end fibre path as a clickable dagre-d3 graph. Each hop —
@@ -48,23 +63,20 @@ Per-release NetBox / Python compatibility lives on the
   OSP strand — shows inline loss + length; the summary band above the
   graph shows total dB used against the strand's parent FibreLink
   budget (or a configurable default), colour-coded `ok` / `warn` /
-  `fail`. New JSON endpoint at `GET
-  /api/plugins/osp/cores/<strand_id>/trace/` returns the hop list for
-  external tooling. dagre-d3 v0.6.4 (~700 KB minified) ships vendored
-  in `static/netbox_osp/js/dagre-d3.min.js`. Three new
+  `fail`. New JSON endpoint at
+  `GET /api/plugins/osp/cores/<strand_id>/trace/` returns the hop list
+  for external tooling. dagre-d3 v0.6.4 (~700 KB minified) ships
+  vendored in `static/netbox_osp/js/dagre-d3.min.js`. Three new
   `PluginTemplateExtension` subclasses inject the trace button onto
   `dcim.Interface`, `dcim.FrontPort`, and netbox-osp `Strand` detail
   pages. New optional config keys under `PLUGINS_CONFIG["netbox_osp"]`:
   `default_cassette_loss_db` (0.5), `default_patch_cord_loss_db` (0.1),
   `default_loss_budget_db` (8.0). Zero new migrations — the tracer is
-  read-only over the existing data model. Tests in
-  `tests/test_core_tracer.py` cover the JSON endpoint, the
-  full-page HTML view, splice-chain walking, loss-math summation, the
-  "incomplete" flag, and the trace-button template integration.
+  read-only over the existing data model.
 
 The `0.2.0` release tag fires once all five v0.2 PRs land. This entry
-documents PRs A, B, and E; the remaining PRs (MtpHarness, cassette
-device-type JSON) append to this `Unreleased` block.
+documents PRs A, B, D, and E; PR C (MtpHarness) appends to this
+`Unreleased` block once it merges.
 
 ## 0.1.1 — 2026-05-13
 
