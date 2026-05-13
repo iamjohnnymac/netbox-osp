@@ -68,3 +68,13 @@ Computed properties: `strand_loss_db`, `splice_loss_db`,
 ### `FibreLinkStrand`
 Through-table assigning a `Strand` to a `FibreLink` at a given
 `position`. Unique on `(link, position)` and `(link, strand)`.
+
+### `LocationGeo`
+A 1:1 side-table on `dcim.Location` adding `latitude`, `longitude`,
+`elevation_m`, and `marker_color`. NetBox core gives Sites lat/lon but
+not Locations — this fills the gap so individual rooms, manholes, or
+jetty poles can be pinned on the network map alongside Site markers.
+`latitude` and `longitude` use `Decimal(max_digits=10, decimal_places=6)`
+matching `Site.latitude` / `Site.longitude` precision; both are optional
+but must be set together. `marker_color` picks from a short hue-separated
+palette so different Location classes stay visually distinct.

@@ -82,4 +82,5 @@ nav:
   - Configure: configure.md
   - Data model: data-model.md
   - Tile bundling: tile-bundling.md
+  - Compatibility: compatibility.md
   - Changelog: changelog.md

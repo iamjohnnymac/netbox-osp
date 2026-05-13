@@ -5,7 +5,7 @@ class NetBoxOspConfig(PluginConfig):
     name = "netbox_osp"
     verbose_name = "NetBox OSP"
     description = "Outside-plant fibre management — cables, splice closures, fibre links with loss budgets, and an offline-capable Leaflet plant map."
-    version = "0.1.0.dev0"
+    version = "0.1.0"
     author = "John McKenzie"
     author_email = "33052970+iamjohnnymac@users.noreply.github.com"
     base_url = "osp"

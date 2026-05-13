@@ -37,13 +37,16 @@ The render script honours these env vars (defaults shown):
 
 ```bash
 tilemaker \
-  --input "${OSP_OSM_PBF:-australia-latest.osm.pbf}" \
+  --input "${OSP_OSM_PBF:-my-area-latest.osm.pbf}" \
   --output "${OSP_OUT_MBTILES:-basemap.mbtiles}" \
-  --bbox "${OSP_BBOX_MIN_LON:-114.5},${OSP_BBOX_MIN_LAT:--22.2},${OSP_BBOX_MAX_LON:-115.5},${OSP_BBOX_MAX_LAT:--21.2}" \
+  --bbox "${OSP_BBOX_MIN_LON:-2.2},${OSP_BBOX_MIN_LAT:-48.7},${OSP_BBOX_MAX_LON:-2.5},${OSP_BBOX_MAX_LAT:-48.9}" \
   --process resources/process-openmaptiles.lua \
   --config resources/config-openmaptiles.json \
   --store /tmp/tilemaker-store
 ```
+
+The example bbox above is the Paris metro for illustration only — replace it
+with the four `OSP_BBOX_*` env vars covering your own area before rendering.
 
 Drop the resulting `basemap.mbtiles` at
 `netbox_osp/static/netbox_osp/tiles/basemap.mbtiles` and re-run

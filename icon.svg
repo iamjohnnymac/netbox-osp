@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  netbox-osp icon — stylised cross-section of a 6-tube OSP fibre cable.
+  Outer jacket, central strength member, six TIA-598-C colour-coded
+  buffer tubes (only the six bright primary positions to keep the
+  silhouette readable at small sizes).
+
+  Copyright (c) 2026 John McKenzie. Licensed under CC BY 4.0 —
+  https://creativecommons.org/licenses/by/4.0/
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="netbox-osp">
+  <title>netbox-osp</title>
+
+  <!-- Outer cable jacket -->
+  <circle cx="256" cy="256" r="232" fill="#1f2933"/>
+  <circle cx="256" cy="256" r="232" fill="none" stroke="#0f1418" stroke-width="12"/>
+
+  <!-- Inner jacket lining (subtle highlight) -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#3a4856" stroke-width="4"/>
+
+  <!-- TIA-598-C colour-coded buffer tubes (6 of 12 positions for clarity) -->
+  <!-- Positions on a circle of radius 130 around (256,256) at 60° steps -->
+  <!-- 1 Blue -->
+  <g transform="translate(256,126)">
+    <circle r="64" fill="#2c5cad" stroke="#13284f" stroke-width="6"/>
+    <circle r="20" fill="#13284f"/>
+  </g>
+  <!-- 2 Orange -->
+  <g transform="translate(368.58,191)">
+    <circle r="64" fill="#e67635" stroke="#7a3815" stroke-width="6"/>
+    <circle r="20" fill="#7a3815"/>
+  </g>
+  <!-- 3 Green -->
+  <g transform="translate(368.58,321)">
+    <circle r="64" fill="#3aaa64" stroke="#1c5733" stroke-width="6"/>
+    <circle r="20" fill="#1c5733"/>
+  </g>
+  <!-- 4 Brown -->
+  <g transform="translate(256,386)">
+    <circle r="64" fill="#7a4a25" stroke="#3a2410" stroke-width="6"/>
+    <circle r="20" fill="#3a2410"/>
+  </g>
+  <!-- 5 Slate -->
+  <g transform="translate(143.42,321)">
+    <circle r="64" fill="#6a7480" stroke="#2f3640" stroke-width="6"/>
+    <circle r="20" fill="#2f3640"/>
+  </g>
+  <!-- 6 White -->
+  <g transform="translate(143.42,191)">
+    <circle r="64" fill="#e8eaed" stroke="#9aa0a6" stroke-width="6"/>
+    <circle r="20" fill="#9aa0a6"/>
+  </g>
+
+  <!-- Central strength member -->
+  <circle cx="256" cy="256" r="42" fill="#cfd4da" stroke="#9aa0a6" stroke-width="6"/>
+  <circle cx="256" cy="256" r="14" fill="#6a7480"/>
+</svg>
