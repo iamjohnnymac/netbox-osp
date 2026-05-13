@@ -11,7 +11,6 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from dcim.models import Site
-from users.models import Token
 
 from netbox_osp.choices import OspCableTypeChoices, OspStatusChoices
 from netbox_osp.models import OspCable
@@ -21,13 +20,16 @@ GRAPHQL_URL = "/graphql/"
 
 
 class NetBoxOspGraphQLTests(TestCase):
+    """Use session auth (force_login) rather than Token auth. NetBox 4.6
+    requires API_TOKEN_PEPPERS for token creation, which isn't set in
+    the CI configuration. Session auth is equally valid for /graphql/."""
+
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()
         cls.user = User.objects.create_user(
             username="gqltest", password="x", is_superuser=True,
         )
-        cls.token = Token.objects.create(user=cls.user)
 
         site_a = Site.objects.create(name="GQL Site A", slug="gql-site-a")
         site_b = Site.objects.create(name="GQL Site B", slug="gql-site-b")
@@ -42,12 +44,14 @@ class NetBoxOspGraphQLTests(TestCase):
             site_b=site_b,
         )
 
+    def setUp(self):
+        self.client.force_login(self.user)
+
     def _post(self, query: str):
         return self.client.post(
             GRAPHQL_URL,
             data=json.dumps({"query": query}),
             content_type="application/json",
-            HTTP_AUTHORIZATION=f"Token {self.token.key}",
         )
 
     def test_list_query_returns_cable(self):
