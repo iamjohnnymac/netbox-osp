@@ -93,3 +93,80 @@ class LossBudgetTests(TestCase):
         self.assertGreater(total, float(self.link.target_loss_budget_db))
         self.assertGreater(float(self.link.loss_budget_pct), 100.0)
         self.assertEqual(self.link.loss_budget_band, "fail")
+
+
+class LossBudgetGaugeTests(TestCase):
+    """The loss_budget_gauge property pre-computes everything the SVG template
+    on FibreLink detail needs. viewBox is 200 wide; the 100%-of-target mark
+    is at x=133.33; the 80% threshold is at x=106.66; >150% gets clipped to
+    the right edge so over-budget links don't render off-canvas.
+
+    We isolate the gauge math from the cables/strands plumbing by patching
+    FibreLink.total_loss_db for the lifetime of each test. mock.patch is
+    used in preference to a proxy-model trick because the latter would
+    register a transient class into Django's app registry and pollute the
+    rest of the test suite.
+    """
+
+    def _gauge(self, target_db, total_pct):
+        """Build a bare FibreLink with `target_loss_budget_db=target_db` and
+        return its `loss_budget_gauge` dict while `total_loss_db` is mocked
+        to be exactly `total_pct%` of the target."""
+        from unittest.mock import PropertyMock, patch
+
+        link = FibreLink(
+            name=f"GAUGE-{total_pct}",
+            target_loss_budget_db=Decimal(str(target_db)),
+        )
+        fake_total = (
+            Decimal(str(total_pct)) * Decimal(str(target_db)) / Decimal("100")
+        )
+        with patch.object(
+            FibreLink, "total_loss_db",
+            new_callable=PropertyMock, return_value=fake_total,
+        ):
+            return link.loss_budget_gauge
+
+    def test_ok_band(self):
+        gauge = self._gauge(target_db=10.0, total_pct=30)
+        self.assertEqual(gauge["band"], "ok")
+        self.assertEqual(gauge["color"], "#28a745")
+        # 30% of 150 = 20% of viewbox width -> 40 viewbox units.
+        self.assertAlmostEqual(gauge["width_vb"], 40.0, places=2)
+        self.assertAlmostEqual(gauge["pct"], 30.0, places=1)
+
+    def test_warn_band(self):
+        gauge = self._gauge(target_db=10.0, total_pct=90)
+        self.assertEqual(gauge["band"], "warn")
+        self.assertEqual(gauge["color"], "#ffc107")
+        # 90% of 150 = 60% of viewbox -> 120 viewbox units.
+        self.assertAlmostEqual(gauge["width_vb"], 120.0, places=2)
+
+    def test_fail_band(self):
+        gauge = self._gauge(target_db=10.0, total_pct=120)
+        self.assertEqual(gauge["band"], "fail")
+        self.assertEqual(gauge["color"], "#dc3545")
+        # 120% of 150 = 80% of viewbox -> 160 viewbox units.
+        self.assertAlmostEqual(gauge["width_vb"], 160.0, places=2)
+
+    def test_fail_band_clipped_at_150_pct(self):
+        gauge = self._gauge(target_db=10.0, total_pct=400)
+        self.assertEqual(gauge["band"], "fail")
+        # 400% gets clipped to 150% -> width_vb == 200 (right edge of viewbox).
+        self.assertEqual(gauge["width_vb"], 200.0)
+        # But pct still reflects reality so the label reads "400.0%".
+        self.assertAlmostEqual(gauge["pct"], 400.0, places=1)
+
+    def test_zero_target_returns_zero_pct(self):
+        from unittest.mock import PropertyMock, patch
+
+        link = FibreLink(name="GAUGE-ZERO", target_loss_budget_db=Decimal("0"))
+        with patch.object(
+            FibreLink, "total_loss_db",
+            new_callable=PropertyMock, return_value=Decimal("0"),
+        ):
+            gauge = link.loss_budget_gauge
+        # loss_budget_pct returns 0 when target is 0 — avoid divide-by-zero.
+        self.assertAlmostEqual(gauge["pct"], 0.0, places=2)
+        self.assertAlmostEqual(gauge["width_vb"], 0.0, places=2)
+        self.assertEqual(gauge["band"], "ok")
