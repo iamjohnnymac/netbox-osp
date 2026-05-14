@@ -85,6 +85,7 @@ and renders the hop list as a plain table.
     // computation takes a moment on large splice graphs.
     window.OSP_TRACE_URL = "{{ trace_json_url }}";
 </script>
+<script src="{% static 'netbox_osp/js/d3.v5.min.js' %}"></script>
 <script src="{% static 'netbox_osp/js/dagre-d3.min.js' %}"></script>
 <script src="{% static 'netbox_osp/js/core_tracer.js' %}"></script>
 {% endblock %}
