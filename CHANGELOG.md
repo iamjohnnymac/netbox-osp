@@ -9,6 +9,17 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-05-14
+
+### Fixed
+
+- Visual core tracer (introduced in 0.2.0) rendered an empty Path graph
+  because `dagre-d3.min.js` declares an external `d3` dependency rather
+  than inlining it. The loss-budget band and hop legend rendered fine
+  but the graph itself stayed blank with "Renderer JS not loaded".
+  Vendored `d3.v5.min.js` alongside the dagre-d3 bundle and added the
+  `<script>` tag in `strand_tracer.html` ahead of dagre-d3.
+
 ## [0.2.0] — 2026-05-13
 
 Five-PR cycle adding inter-rack fibre infrastructure: MPO/MTP trunks
@@ -236,7 +247,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.1
 [0.2.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.0
 [0.1.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.1.0

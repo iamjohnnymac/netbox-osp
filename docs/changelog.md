@@ -9,6 +9,14 @@ Per-release NetBox / Python compatibility lives on the
 
 ## Unreleased
 
+## 0.2.1 — 2026-05-14
+
+### Fixed
+
+- Visual core tracer rendered an empty Path graph because dagre-d3 declares an
+  external d3 dependency. Vendored d3.v5.min.js alongside the dagre-d3 bundle.
+
+
 ## 0.2.0 — 2026-05-13
 
 Five-PR cycle adding inter-rack fibre infrastructure: MPO/MTP trunks
