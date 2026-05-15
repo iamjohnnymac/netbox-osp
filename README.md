@@ -25,9 +25,21 @@ attenuation target.
 
 ## Screenshots
 
-Screenshots of the network map, fibre-link loss-budget detail, and splice-closure
-detail page will land in the docs site at
-<https://iamjohnnymac.github.io/netbox-osp/> alongside the first patch release.
+<div align="center">
+
+<img src="docs/screenshots/network_map.png" alt="Full-screen network map with cables, splice closures, and Location GPS markers" width="800" />
+
+<sub><em>Full-screen Leaflet plant map at <code>/plugins/osp/map/</code> — OSP cables, splice closures, Sites, and per-Location markers all filterable.</em></sub>
+
+<img src="docs/screenshots/mtp_harness_deploy.png" alt="One-click MTP harness deploy form" width="800" />
+
+<sub><em>One form submit atomically deploys a parent FibreTrunk + N cassette devices + N cables + N TrunkBreakout rows.</em></sub>
+
+<img src="docs/screenshots/core_tracer.png" alt="Visual core tracer end-to-end fibre path with per-hop loss" width="800" />
+
+<sub><em>Click "Trace this core" on any Strand / FrontPort / Interface. Each hop is clickable; loss budget banded ok/warn/fail above the graph.</em></sub>
+
+</div>
 
 ## Features
 
