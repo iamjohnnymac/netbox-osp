@@ -9,6 +9,26 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-05-18
+
+### Fixed
+
+- **`PluginTemplateExtension` hooks now render on custom detail
+  templates.** v0.3.0 shipped two new `PluginTemplateExtension`
+  classes (`SpliceClosureQrCode`, `SpliceTrayQrCode`) plus enabled
+  third-party plugins like `netbox-attachments` to target our
+  models — but our custom detail templates (`spliceclosure.html`,
+  `splicetray.html`, `fibretrunk.html`, `ospcable.html`,
+  `fibrelink.html`) override the `content` block of
+  `generic/object.html` wholesale, which silently swallows the
+  slot where NetBox renders plugin extensions. The Field QR code
+  panel and the Attachments card never appeared. Each affected
+  template now loads `{% load plugins %}` and renders
+  `{% plugin_right_page object %}`, `{% plugin_left_page object %}`,
+  and `{% plugin_full_width_page object %}` so any plugin's hooks
+  fire. Note that `netbox-osp[qrcode]` users on v0.3.0 will see
+  the QR panel only after upgrading to v0.3.1.
+
 ## [0.3.0] — 2026-05-18
 
 Three-PR ecosystem sprint per the v0.3 moat plan §v0.3.0 quick
@@ -308,7 +328,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.0
 [0.2.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.2
 [0.2.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.1

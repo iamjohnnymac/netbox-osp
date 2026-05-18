@@ -1,5 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% load plugins %}
 {% load static %}
 
 {% block head %}
@@ -67,6 +68,12 @@
         </div>
         {% include 'inc/panels/tags.html' %}
         {% include 'inc/panels/comments.html' %}
+        {% plugin_right_page object %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col-md-6">
+        {% plugin_left_page object %}
     </div>
 </div>
 <div class="row mt-3">
@@ -95,6 +102,11 @@
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        {% plugin_full_width_page object %}
     </div>
 </div>
 {% endblock %}
