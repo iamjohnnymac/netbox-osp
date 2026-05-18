@@ -37,30 +37,37 @@
                     <td>
                         {% load l10n %}
                         {% with gauge=object.loss_budget_gauge %}
-                        <svg viewBox="0 0 200 32" xmlns="http://www.w3.org/2000/svg"
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                            <strong style="font-size: 1.05rem;">
+                                {{ gauge.total_db|floatformat:2 }} / {{ gauge.target_db|floatformat:2 }} dB
+                            </strong>
+                            <span class="badge {% if gauge.band == 'ok' %}text-bg-success{% elif gauge.band == 'warn' %}text-bg-warning{% else %}text-bg-danger{% endif %}">
+                                {{ gauge.pct|unlocalize }}%
+                            </span>
+                            {% if gauge.band == "fail" %}
+                                <span class="badge text-bg-danger">OVER BUDGET</span>
+                            {% endif %}
+                        </div>
+                        <svg viewBox="0 0 200 14" xmlns="http://www.w3.org/2000/svg"
                              class="osp-loss-gauge osp-loss-gauge--{{ gauge.band }}"
+                             style="width: 100%; max-width: 360px; height: 18px;"
+                             preserveAspectRatio="none"
                              role="img"
                              aria-label="{{ gauge.total_db|floatformat:3 }} dB of {{ gauge.target_db|floatformat:3 }} dB used ({{ gauge.pct|unlocalize }} percent)">
-                            <!-- Background zones (consistent fill-opacity for visual balance) -->
-                            <rect x="0"      y="7" width="106.66" height="18" fill="#28a745" fill-opacity="0.22"/>
-                            <rect x="106.66" y="7" width="26.67"  height="18" fill="#ffc107" fill-opacity="0.22"/>
-                            <rect x="133.33" y="7" width="66.67"  height="18" fill="#dc3545" fill-opacity="0.22"/>
+                            <!-- Background zones: green 0-80%, yellow 80-100%, red over budget -->
+                            <rect x="0"      y="0" width="106.66" height="14" fill="#28a745" fill-opacity="0.30"/>
+                            <rect x="106.66" y="0" width="26.67"  height="14" fill="#ffc107" fill-opacity="0.30"/>
+                            <rect x="133.33" y="0" width="66.67"  height="14" fill="#dc3545" fill-opacity="0.30"/>
                             <!-- Threshold ticks -->
-                            <line x1="106.66" y1="3" x2="106.66" y2="29" stroke="#6c757d" stroke-width="0.4"/>
-                            <line x1="133.33" y1="3" x2="133.33" y2="29" stroke="#6c757d" stroke-width="0.8"/>
-                            <text x="106.66" y="5.5" text-anchor="middle" font-size="3.5" fill="#6c757d">80%</text>
-                            <text x="133.33" y="5.5" text-anchor="middle" font-size="3.5" fill="#6c757d">budget</text>
-                            <!-- Indicator bar -->
-                            <rect x="0" y="11.5" width="{{ gauge.width_vb|unlocalize }}" height="10"
+                            <line x1="106.66" y1="0" x2="106.66" y2="14" stroke="#888" stroke-width="0.5"/>
+                            <line x1="133.33" y1="0" x2="133.33" y2="14" stroke="#888" stroke-width="0.8"/>
+                            <!-- Indicator bar — full height for clarity -->
+                            <rect x="0" y="2" width="{{ gauge.width_vb|unlocalize }}" height="10"
                                   fill="{{ gauge.color }}"/>
-                            <!-- Numeric label — paint-order halo for legibility on light + dark themes. -->
-                            <text x="100" y="22" text-anchor="middle"
-                                  font-size="5.5" font-weight="bold" fill="#1a1a1a"
-                                  stroke="#ffffff" stroke-width="0.5" paint-order="stroke">
-                                {{ gauge.total_db|floatformat:2 }} / {{ gauge.target_db|floatformat:2 }} dB
-                                ({{ gauge.pct|unlocalize }}%{% if gauge.band == "fail" %} &mdash; OVER BUDGET{% endif %})
-                            </text>
                         </svg>
+                        <div class="text-muted small mt-1">
+                            green &lt; 80% &middot; yellow 80&ndash;100% &middot; red over budget
+                        </div>
                         {% endwith %}
                     </td>
                 </tr>
