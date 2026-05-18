@@ -9,6 +9,7 @@ from ..choices import (
     ClosureTypeChoices,
     FibreLinkStatusChoices,
     LocationMarkerColorChoices,
+    MpoPolarityChoices,
     OspCableTypeChoices,
     OspStatusChoices,
     SpliceTypeChoices,
@@ -97,13 +98,14 @@ class LocationGeoBulkEditForm(NetBoxModelBulkEditForm):
 
 class FibreTrunkBulkEditForm(NetBoxModelBulkEditForm):
     trunk_type = forms.ChoiceField(choices=TrunkTypeChoices, required=False)
+    polarity = forms.ChoiceField(choices=MpoPolarityChoices, required=False)
     status = forms.ChoiceField(choices=OspStatusChoices, required=False)
     tenant = DynamicModelChoiceField(queryset=Tenant.objects.all(), required=False)
     manufacturer = DynamicModelChoiceField(queryset=Manufacturer.objects.all(), required=False)
     show_on_map = forms.NullBooleanField(required=False)
 
     model = FibreTrunk
-    nullable_fields = ("tenant", "manufacturer", "length_m", "description")
+    nullable_fields = ("tenant", "manufacturer", "length_m", "description", "polarity")
 
 
 class TrunkBreakoutBulkEditForm(NetBoxModelBulkEditForm):

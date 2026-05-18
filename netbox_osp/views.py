@@ -795,6 +795,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         parent_payload = {
             "trunk_cid": parent["trunk_cid"],
             "trunk_type": parent["trunk_type"],
+            "polarity": parent.get("polarity") or "",
             "fibre_count": parent["fibre_count"],
             "length_m": str(parent["length_m"]) if parent.get("length_m") is not None else None,
             "manufacturer": _pk_or_none(parent.get("manufacturer")),
@@ -866,6 +867,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
         parent_resolved = {
             "trunk_cid": parent["trunk_cid"],
             "trunk_type": parent["trunk_type"],
+            "polarity": parent.get("polarity") or "",
             "fibre_count": parent["fibre_count"],
             "length_m": _decimal(parent.get("length_m")),
             "manufacturer": _fetch(Manufacturer, parent.get("manufacturer"), "Manufacturer"),
@@ -974,6 +976,7 @@ class MtpHarnessDeployView(LoginRequiredMixin, PermissionRequiredMixin, View):
             trunk = models.FibreTrunk(
                 cid=parent_resolved["trunk_cid"],
                 trunk_type=parent_resolved["trunk_type"],
+                polarity=parent_resolved.get("polarity", ""),
                 fibre_count=parent_resolved["fibre_count"],
                 length_m=parent_resolved.get("length_m"),
                 manufacturer=parent_resolved.get("manufacturer"),

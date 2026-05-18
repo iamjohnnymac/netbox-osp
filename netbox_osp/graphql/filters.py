@@ -107,6 +107,7 @@ class LocationGeoFilter(NetBoxModelFilter):
 class FibreTrunkFilter(PrimaryModelFilter):
     cid: FilterLookup[str] | None = strawberry_django.filter_field()
     trunk_type: FilterLookup[str] | None = strawberry_django.filter_field()
+    polarity: FilterLookup[str] | None = strawberry_django.filter_field()
     status: FilterLookup[str] | None = strawberry_django.filter_field()
     fibre_count: FilterLookup[int] | None = strawberry_django.filter_field()
     tenant_id: FilterLookup[int] | None = strawberry_django.filter_field()

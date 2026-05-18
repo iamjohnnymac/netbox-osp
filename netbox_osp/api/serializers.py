@@ -136,7 +136,7 @@ class FibreTrunkSerializer(NetBoxModelSerializer):
     class Meta:
         model = FibreTrunk
         fields = (
-            "id", "url", "display", "cid", "trunk_type", "fibre_count",
+            "id", "url", "display", "cid", "trunk_type", "polarity", "fibre_count",
             "manufacturer", "length_m", "status", "route", "show_on_map",
             "description", "comments", "tenant",
             "fibres_used", "fibres_remaining", "fibres_utilization_pct",

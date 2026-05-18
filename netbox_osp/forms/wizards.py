@@ -13,7 +13,7 @@ from django.forms import formset_factory
 from dcim.models import Cable, Device, DeviceRole, DeviceType, Manufacturer, Rack, RearPort
 from utilities.forms.fields import DynamicModelChoiceField
 
-from ..choices import TrunkTypeChoices
+from ..choices import MpoPolarityChoices, TrunkTypeChoices
 
 
 class ImportCablesIntoTrunkForm(forms.Form):
@@ -101,6 +101,13 @@ class MtpHarnessForm(forms.Form):
         choices=TrunkTypeChoices,
         initial=TrunkTypeChoices.MPO_24,
         label="Trunk type",
+    )
+    polarity = forms.ChoiceField(
+        choices=MpoPolarityChoices,
+        required=False,
+        label="MPO polarity",
+        help_text="Type A/B/C/D per TIA-568.3-D. Leave blank if unknown or "
+                  "the harness is single-fibre (non-MPO).",
     )
     fibre_count = forms.IntegerField(
         min_value=1,

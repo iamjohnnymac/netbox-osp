@@ -256,7 +256,7 @@ class FibreTrunkImportForm(NetBoxModelImportForm):
         # Set it via the UI or REST API after import. Mirrors the
         # SpliceClosureImportForm.location_point exclusion rule.
         fields = (
-            "cid", "trunk_type", "fibre_count", "manufacturer", "length_m",
+            "cid", "trunk_type", "polarity", "fibre_count", "manufacturer", "length_m",
             "status", "show_on_map", "tenant", "description",
         )
 

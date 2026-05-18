@@ -142,6 +142,7 @@ class LocationGeoTable(NetBoxTable):
 class FibreTrunkTable(NetBoxTable):
     cid = tables.Column(linkify=True)
     trunk_type = ChoiceFieldColumn()
+    polarity = ChoiceFieldColumn()
     status = ChoiceFieldColumn()
     manufacturer = tables.Column(linkify=True)
     tenant = tables.Column(linkify=True)
@@ -157,13 +158,13 @@ class FibreTrunkTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = FibreTrunk
         fields = (
-            "pk", "id", "cid", "trunk_type", "status", "fibre_count",
+            "pk", "id", "cid", "trunk_type", "polarity", "status", "fibre_count",
             "fibres_used", "fibres_remaining",
             "manufacturer", "length_m", "tenant", "show_on_map",
             "description", "tags", "created", "last_updated",
         )
         default_columns = (
-            "cid", "trunk_type", "status", "fibre_count",
+            "cid", "trunk_type", "polarity", "status", "fibre_count",
             "fibres_used", "fibres_remaining",
             "manufacturer", "length_m",
         )

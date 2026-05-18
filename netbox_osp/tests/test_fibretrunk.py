@@ -22,7 +22,7 @@ from rest_framework import status
 
 from utilities.testing import APITestCase, TestCase
 
-from netbox_osp.choices import OspStatusChoices, TrunkTypeChoices
+from netbox_osp.choices import MpoPolarityChoices, OspStatusChoices, TrunkTypeChoices
 from netbox_osp.models import FibreTrunk
 
 
@@ -184,3 +184,108 @@ class FibreTrunkGraphQLSmokeTests(DjangoTestCase):
             query_cls.__annotations__,
             "schema Query class missing osp_fibre_trunk_list annotation",
         )
+
+
+# ============================================================================
+# v0.3.0 — MPO polarity
+# ============================================================================
+
+class FibreTrunkPolarityModelTests(TestCase):
+    """Polarity (Type A/B/C/D per TIA-568.3-D) is a new field on FibreTrunk
+    added in v0.3.0. Blank is permitted for legacy data and non-MPO trunks.
+    """
+
+    def test_default_polarity_is_blank(self):
+        trunk = FibreTrunk(cid="POL-DEF-001")
+        self.assertEqual(trunk.polarity, "")
+
+    def test_clean_accepts_blank_polarity(self):
+        trunk = FibreTrunk(cid="POL-BLANK-001", polarity="")
+        trunk.clean()  # must not raise
+
+    def test_clean_accepts_each_polarity_value(self):
+        for value in (
+            MpoPolarityChoices.TYPE_A,
+            MpoPolarityChoices.TYPE_B,
+            MpoPolarityChoices.TYPE_C,
+            MpoPolarityChoices.TYPE_D,
+        ):
+            trunk = FibreTrunk(cid=f"POL-OK-{value}", polarity=value)
+            trunk.clean()  # must not raise
+            self.assertEqual(trunk.polarity, value)
+
+    def test_get_polarity_color_returns_none_when_blank(self):
+        trunk = FibreTrunk(cid="POL-COL-BLANK")
+        self.assertIsNone(trunk.get_polarity_color())
+
+    def test_get_polarity_color_returns_palette_entry_when_set(self):
+        trunk = FibreTrunk(cid="POL-COL-B", polarity=MpoPolarityChoices.TYPE_B)
+        # Just assert non-empty — the exact palette key is a UX detail.
+        self.assertTrue(trunk.get_polarity_color())
+
+
+class FibreTrunkPolarityAPITests(APITestCase):
+    """Polarity round-trips through the REST API."""
+
+    def _url(self, suffix=""):
+        return f"/api/plugins/osp/trunks/{suffix}"
+
+    def test_create_with_polarity(self):
+        self.add_permissions("netbox_osp.add_fibretrunk")
+        resp = self.client.post(
+            self._url(),
+            data={"cid": "POL-API-001", "polarity": MpoPolarityChoices.TYPE_B},
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED, resp.content)
+        trunk = FibreTrunk.objects.get(cid="POL-API-001")
+        self.assertEqual(trunk.polarity, MpoPolarityChoices.TYPE_B)
+
+    def test_create_without_polarity_defaults_blank(self):
+        self.add_permissions("netbox_osp.add_fibretrunk")
+        resp = self.client.post(
+            self._url(),
+            data={"cid": "POL-API-DEF-001"},
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED, resp.content)
+        trunk = FibreTrunk.objects.get(cid="POL-API-DEF-001")
+        self.assertEqual(trunk.polarity, "")
+
+    def test_patch_polarity(self):
+        self.add_permissions("netbox_osp.change_fibretrunk")
+        trunk = FibreTrunk.objects.create(cid="POL-API-PATCH")
+        resp = self.client.patch(
+            self._url(f"{trunk.pk}/"),
+            data={"polarity": MpoPolarityChoices.TYPE_D},
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.content)
+        trunk.refresh_from_db()
+        self.assertEqual(trunk.polarity, MpoPolarityChoices.TYPE_D)
+
+    def test_retrieve_includes_polarity(self):
+        self.add_permissions("netbox_osp.view_fibretrunk")
+        trunk = FibreTrunk.objects.create(
+            cid="POL-API-RT", polarity=MpoPolarityChoices.TYPE_A,
+        )
+        resp = self.client.get(self._url(f"{trunk.pk}/"), **self.header)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK, resp.content)
+        self.assertEqual(resp.json()["polarity"], MpoPolarityChoices.TYPE_A)
+
+
+class FibreTrunkPolarityChoicesTests(DjangoTestCase):
+    """The new MpoPolarityChoices ChoiceSet is well-formed."""
+
+    def test_has_four_polarity_types(self):
+        values = {entry[0] for entry in MpoPolarityChoices.CHOICES}
+        self.assertEqual(values, {"type-a", "type-b", "type-c", "type-d"})
+
+    def test_choices_have_colors(self):
+        # Each entry is (value, label, color). Colour must be non-empty.
+        for value, label, color in MpoPolarityChoices.CHOICES:
+            self.assertTrue(label, f"{value} missing label")
+            self.assertTrue(color, f"{value} missing colour")

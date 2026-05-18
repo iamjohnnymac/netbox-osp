@@ -63,6 +63,33 @@ class TrunkTypeChoices(ChoiceSet):
     }
 
 
+class MpoPolarityChoices(ChoiceSet):
+    """MPO/MTP polarity per TIA-568.3-D.
+
+    Type A: straight-through (key up / key down).
+    Type B: reversed (key up / key up).
+    Type C: pairwise flipped (legacy).
+    Type D: Base-8 / forward-thinking single-mode designs.
+
+    Blank is permitted on FibreTrunk for legacy data or non-MPO trunk
+    types (Ribbon, Loose-tube) where polarity is undefined.
+    """
+
+    key = "FibreTrunk.polarity"
+
+    TYPE_A = "type-a"
+    TYPE_B = "type-b"
+    TYPE_C = "type-c"
+    TYPE_D = "type-d"
+
+    CHOICES = [
+        (TYPE_A, "Type A (straight-through)", "blue"),
+        (TYPE_B, "Type B (reversed)", "purple"),
+        (TYPE_C, "Type C (pairwise flipped)", "cyan"),
+        (TYPE_D, "Type D (Base-8)", "orange"),
+    ]
+
+
 class OspStatusChoices(ChoiceSet):
     key = "OspCable.status"
 

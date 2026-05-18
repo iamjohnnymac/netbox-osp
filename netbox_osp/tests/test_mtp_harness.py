@@ -269,6 +269,36 @@ class MtpHarnessPostTests(TestCase):
         for cable in Cable.objects.all():
             self.assertEqual(cable.terminations.count(), 2)
 
+    def test_post_happy_path_sets_polarity(self):
+        # v0.3.0: polarity flows from MtpHarnessForm.cleaned_data through
+        # the parent_payload / parent_resolved round-trip into the created
+        # FibreTrunk row.
+        from netbox_osp.choices import MpoPolarityChoices
+
+        data = _form_data(self.fx, [
+            _destination_create(self.fx["rack_a"], "CST-A", "10.0", 1, 12),
+            _destination_create(self.fx["rack_b"], "CST-B", "10.0", 13, 24),
+        ])
+        data["polarity"] = MpoPolarityChoices.TYPE_B
+        resp = self._post_confirm(data)
+        self.assertEqual(resp.status_code, 302, resp.content[:500])
+        self.assertEqual(FibreTrunk.objects.count(), 1)
+        trunk = FibreTrunk.objects.first()
+        self.assertEqual(trunk.polarity, MpoPolarityChoices.TYPE_B)
+
+    def test_post_happy_path_polarity_blank_when_omitted(self):
+        # Polarity is optional on the wizard. Omitting it must not break
+        # the deploy, and the resulting FibreTrunk has polarity="".
+        data = _form_data(self.fx, [
+            _destination_create(self.fx["rack_a"], "CST-A", "10.0", 1, 24),
+        ])
+        # No polarity key in data — default is missing.
+        resp = self._post_confirm(data)
+        self.assertEqual(resp.status_code, 302, resp.content[:500])
+        self.assertEqual(FibreTrunk.objects.count(), 1)
+        trunk = FibreTrunk.objects.first()
+        self.assertEqual(trunk.polarity, "")
+
     def test_post_happy_path_three_destinations(self):
         data = _form_data(self.fx, [
             _destination_create(self.fx["rack_a"], "CST-A", "10.0", 1, 8),
