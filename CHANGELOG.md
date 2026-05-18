@@ -9,6 +9,13 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-18
+
+Three-PR ecosystem sprint per the v0.3 moat plan §v0.3.0 quick
+wins. Two integrations + one operations feature; no breaking
+changes. Migration `0005_fibretrunk_polarity` is additive and
+non-destructive.
+
 ### Added
 
 - **MPO polarity tracking on `FibreTrunk`** — adds
@@ -44,10 +51,10 @@ Per-release NetBox / Python compatibility lives in
   `TrunkBreakout`, `LocationGeo`). Operators can now attach OTDR
   `.sor` traces, splice photos, as-built PDFs, and acceptance-test
   certificates to any OSP record. Install with `pip install
-  netbox-osp[attachments] netbox-attachments`. Zero plugin code — pure
-  composition via the upstream `scope_filter` setting. See
-  `docs/integrations.md`. Sets up the file-storage layer that the
-  upcoming v0.3.5 OTDR moat work will read `.sor` files from.
+  netbox-osp[attachments]`. Zero plugin code — pure composition via
+  the upstream `scope_filter` setting. See `docs/integrations.md`.
+  Sets up the file-storage layer that the upcoming v0.3.5 OTDR moat
+  work will read `.sor` files from.
 
 ## [0.2.2] — 2026-05-18
 
@@ -301,7 +308,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.0
 [0.2.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.2
 [0.2.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.1
 [0.2.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.0
