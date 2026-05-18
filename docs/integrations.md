@@ -26,11 +26,11 @@ for free.
 ### Install
 
 ```bash
-pip install netbox-osp[attachments] netbox-attachments
+pip install netbox-osp[attachments]
 ```
 
 The `[attachments]` extra pulls in a compatible `netbox-attachments`
-release. You can also install it directly:
+release. You can also install it directly without the extra:
 
 ```bash
 pip install netbox-attachments
@@ -45,7 +45,8 @@ PLUGINS = [
 ]
 ```
 
-Apply migrations and restart NetBox and the RQ workers:
+Apply migrations, collect static assets, then restart NetBox and the
+RQ workers:
 
 ```bash
 python manage.py migrate
