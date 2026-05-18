@@ -9,6 +9,18 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-05-18
+
+### Fixed
+
+- **MTP harness deploy form now exposes the `polarity` selector.**
+  v0.3.0 added a `polarity` `ChoiceField` to `MtpHarnessForm` but
+  `mtp_harness_deploy.html` renders each field explicitly via
+  `{% render_field form.X %}` rather than iterating the form, so the
+  new field never appeared in the UI. Added `{% render_field
+  form.polarity %}` between `trunk_type` and `fibre_count` so
+  operators can pick the MPO polarity when deploying a harness.
+
 ## [0.3.1] — 2026-05-18
 
 ### Fixed
@@ -328,7 +340,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.2
 [0.3.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.0
 [0.2.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.2
