@@ -20,6 +20,18 @@ Per-release NetBox / Python compatibility lives in
   new field never appeared in the UI. Added `{% render_field
   form.polarity %}` between `trunk_type` and `fibre_count` so
   operators can pick the MPO polarity when deploying a harness.
+- **Per-object detail-page maps now use the shared base-layer
+  manager** (`spliceclosure.html`, `ospcable.html`). The detail
+  maps previously only fetched from the local MBTiles proxy, which
+  bundles tiles for a Wheatstone bbox only — Perth-metro or any
+  other location rendered as a blank dark canvas with just the
+  marker pin. They now hook `OspBaseLayers.attach(map, null,
+  tileUrl)` so they start on the preferred online layer and
+  auto-fall-back to the bundled MBTiles after three tile errors,
+  matching the main network map's behaviour. No dropdown UI is
+  rendered (passing `null` skips the menu); operators get a
+  working map at any geography out of the box. Pre-existing bug
+  noticed during the v0.3.1 live-verify.
 
 ## [0.3.1] — 2026-05-18
 
