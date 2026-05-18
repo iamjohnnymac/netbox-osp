@@ -9,6 +9,7 @@ from ..choices import (
     ClosureTypeChoices,
     FibreLinkStatusChoices,
     LocationMarkerColorChoices,
+    MpoPolarityChoices,
     OspCableTypeChoices,
     OspStatusChoices,
     SpliceTypeChoices,
@@ -75,6 +76,7 @@ class LocationGeoFilterForm(NetBoxModelFilterSetForm):
 class FibreTrunkFilterForm(NetBoxModelFilterSetForm):
     model = FibreTrunk
     trunk_type = forms.MultipleChoiceField(choices=TrunkTypeChoices, required=False)
+    polarity = forms.MultipleChoiceField(choices=MpoPolarityChoices, required=False)
     status = forms.MultipleChoiceField(choices=OspStatusChoices, required=False)
     tenant_id = DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, label="Tenant")
 

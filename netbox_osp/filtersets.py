@@ -5,12 +5,13 @@ from netbox.filtersets import NetBoxModelFilterSet
 from dcim.models import Cable, Location, Site
 
 from .choices import (
+    ClosureTypeChoices,
     FibreLinkStatusChoices,
+    MpoPolarityChoices,
     OspCableTypeChoices,
     OspStatusChoices,
-    StrandStatusChoices,
-    ClosureTypeChoices,
     SpliceTypeChoices,
+    StrandStatusChoices,
     TrunkTypeChoices,
 )
 from .models import (
@@ -181,12 +182,13 @@ class LocationGeoFilterSet(NetBoxModelFilterSet):
 
 class FibreTrunkFilterSet(NetBoxModelFilterSet):
     trunk_type = django_filters.MultipleChoiceFilter(choices=TrunkTypeChoices)
+    polarity = django_filters.MultipleChoiceFilter(choices=MpoPolarityChoices)
     status = django_filters.MultipleChoiceFilter(choices=OspStatusChoices)
 
     class Meta:
         model = FibreTrunk
         fields = (
-            "id", "cid", "trunk_type", "status", "fibre_count",
+            "id", "cid", "trunk_type", "polarity", "status", "fibre_count",
             "tenant", "manufacturer", "show_on_map",
         )
 

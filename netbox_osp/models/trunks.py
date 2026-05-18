@@ -30,7 +30,7 @@ from django.urls import reverse
 
 from netbox.models import NetBoxModel
 
-from ..choices import OspStatusChoices, TrunkTypeChoices
+from ..choices import MpoPolarityChoices, OspStatusChoices, TrunkTypeChoices
 from ._geo import validate_linestring
 
 
@@ -44,6 +44,14 @@ class FibreTrunk(NetBoxModel):
         max_length=32,
         choices=TrunkTypeChoices,
         default=TrunkTypeChoices.MPO_24,
+    )
+    polarity = models.CharField(
+        max_length=16,
+        choices=MpoPolarityChoices,
+        blank=True,
+        default="",
+        help_text="MPO polarity type per TIA-568.3-D. Leave blank for "
+                  "non-MPO trunks or when polarity is unknown.",
     )
     fibre_count = models.PositiveSmallIntegerField(
         default=24,
@@ -114,6 +122,11 @@ class FibreTrunk(NetBoxModel):
 
     def get_trunk_type_color(self):
         return TrunkTypeChoices.colors.get(self.trunk_type)
+
+    def get_polarity_color(self):
+        if not self.polarity:
+            return None
+        return MpoPolarityChoices.colors.get(self.polarity)
 
     def clean(self):
         super().clean()

@@ -11,6 +11,19 @@ Per-release NetBox / Python compatibility lives in
 
 ### Added
 
+- **MPO polarity tracking on `FibreTrunk`** — adds
+  `MpoPolarityChoices` (Type A / B / C / D per TIA-568.3-D) and a
+  new `polarity` `CharField` on `FibreTrunk`. Surfaced on the
+  detail page (badge next to `Type`), table column, filter UI, REST
+  API, REST bulk-import + bulk-edit, GraphQL filter, and the MTP
+  harness one-click deploy wizard. Blank is permitted for non-MPO
+  trunk types (Ribbon / Loose-tube) and unknown-polarity legacy
+  data. Addresses NetBox core issue
+  [#5798](https://github.com/netbox-community/netbox/issues/5798)
+  and the VIAVI "40 % of hyperscale downtime is fibre alignment /
+  connector issues" stat. Migration `0005_fibretrunk_polarity` is
+  additive and non-destructive (empty-string default for existing
+  rows).
 - **Field QR codes on `SpliceClosure` and `SpliceTray`** — two new
   `PluginTemplateExtension` classes (`SpliceClosureQrCode`,
   `SpliceTrayQrCode`) inject a Field QR code panel into the right-page

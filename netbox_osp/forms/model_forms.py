@@ -133,7 +133,7 @@ class FibreTrunkForm(NetBoxModelForm):
     class Meta:
         model = FibreTrunk
         fields = (
-            "cid", "trunk_type", "fibre_count", "manufacturer", "length_m",
+            "cid", "trunk_type", "polarity", "fibre_count", "manufacturer", "length_m",
             "status", "route", "show_on_map", "tenant",
             "description", "comments", "tags",
         )

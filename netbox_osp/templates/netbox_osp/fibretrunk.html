@@ -16,6 +16,7 @@
             <table class="table table-hover attr-table">
                 <tr><th>CID</th><td>{{ object.cid }}</td></tr>
                 <tr><th>Type</th><td>{% badge object.get_trunk_type_display bg_color=object.get_trunk_type_color %}</td></tr>
+                <tr><th>Polarity</th><td>{% if object.polarity %}{% badge object.get_polarity_display bg_color=object.get_polarity_color %}{% else %}&mdash;{% endif %}</td></tr>
                 <tr><th>Status</th><td>{% badge object.get_status_display bg_color=object.get_status_color %}</td></tr>
                 <tr><th>Fibre count</th><td>{{ object.fibre_count }}</td></tr>
                 <tr><th>Manufacturer</th><td>{{ object.manufacturer|linkify|default:"&mdash;" }}</td></tr>
