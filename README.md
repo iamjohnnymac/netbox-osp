@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="icon.svg" alt="netbox-osp" width="96" height="96" />
+<img src="https://raw.githubusercontent.com/iamjohnnymac/netbox-osp/main/icon.svg" alt="netbox-osp" width="96" height="96" />
 
 **Outside-plant fibre management for NetBox — cables, splice closures, loss budgets,
 and an offline-capable plant map.**
@@ -28,15 +28,15 @@ attenuation target.
 
 <div align="center">
 
-<img src="docs/screenshots/network_map.png" alt="Full-screen network map with cables, splice closures, and Location GPS markers" width="800" />
+<img src="https://raw.githubusercontent.com/iamjohnnymac/netbox-osp/main/docs/screenshots/network_map.png" alt="Full-screen network map with cables, splice closures, and Location GPS markers" width="800" />
 
 <sub><em>Full-screen Leaflet plant map at <code>/plugins/osp/map/</code> — OSP cables, splice closures, Sites, and per-Location markers all filterable.</em></sub>
 
-<img src="docs/screenshots/mtp_harness_deploy.png" alt="One-click MTP harness deploy form" width="800" />
+<img src="https://raw.githubusercontent.com/iamjohnnymac/netbox-osp/main/docs/screenshots/mtp_harness_deploy.png" alt="One-click MTP harness deploy form" width="800" />
 
 <sub><em>One form submit atomically deploys a parent FibreTrunk + N cassette devices + N cables + N TrunkBreakout rows.</em></sub>
 
-<img src="docs/screenshots/core_tracer.png" alt="Visual core tracer end-to-end fibre path with per-hop loss" width="800" />
+<img src="https://raw.githubusercontent.com/iamjohnnymac/netbox-osp/main/docs/screenshots/core_tracer.png" alt="Visual core tracer end-to-end fibre path with per-hop loss" width="800" />
 
 <sub><em>Click "Trace this core" on any Strand / FrontPort / Interface. Each hop is clickable; loss budget banded ok/warn/fail above the graph.</em></sub>
 

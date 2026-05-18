@@ -9,6 +9,17 @@ Per-release NetBox / Python compatibility lives on the
 
 ## Unreleased
 
+## 0.2.2 — 2026-05-18
+
+### Docs
+
+- README screenshots now use absolute raw.githubusercontent.com URLs so they
+  render inline on the PyPI project page.
+- New 8-step demo walkthrough at /demo/ on the docs site with 10 live
+  screenshots (OSP model, splice closures, loss-budget gauge, MTP harness
+  deploy form, visual core tracer, plant map).
+- No code changes — metadata-only.
+
 ## 0.2.1 — 2026-05-14
 
 ### Fixed

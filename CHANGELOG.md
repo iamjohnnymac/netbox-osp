@@ -9,6 +9,20 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-05-18
+
+### Docs
+
+- README screenshots now use absolute `raw.githubusercontent.com` URLs
+  so they render inline on the PyPI project page (relative `docs/`
+  paths in the previous releases pointed at files PyPI doesn't bundle).
+- Added an 8-step **demo walkthrough** at `/demo/` on the docs site
+  with 10 screenshots captured live from the public demo, covering
+  the OSP model, splice closures, loss-budget gauge, MTP harness
+  deploy form, visual core tracer, and the plant map.
+- README gains a "demo walkthrough" badge linking to the new page.
+- No code changes — `pip install -U netbox-osp` is metadata-only.
+
 ## [0.2.1] — 2026-05-14
 
 ### Fixed
@@ -247,7 +261,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.2
 [0.2.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.1
 [0.2.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.2.0
 [0.1.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.1.1
