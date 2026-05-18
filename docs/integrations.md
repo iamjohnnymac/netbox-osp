@@ -125,3 +125,61 @@ live in netbox-attachments** — we parse on upload, store the metadata
 in our `OTDRTrace` model, and let netbox-attachments handle the raw
 file storage. Installing netbox-attachments now means you're ready for
 v0.3.5 with no further configuration.
+
+---
+
+## Field QR codes (SpliceClosure + SpliceTray)
+
+`netbox-osp` ships built-in QR codes on `SpliceClosure` and
+`SpliceTray` detail pages. The QR encodes the absolute URL of the
+page — print it on the closure label, a field tech scans it with a
+phone, and lands directly on the splice plan with attached photos
+and loss budget. No login flow needed beyond NetBox's standard
+session.
+
+### Install
+
+```bash
+pip install netbox-osp[qrcode]
+```
+
+The `[qrcode]` extra pulls in the
+[`qrcode`](https://pypi.org/project/qrcode/) Python library
+(pure-Python SVG generation, no Pillow required). With the extra
+installed, the QR panel renders automatically on
+`/plugins/osp/closures/<id>/` and `/plugins/osp/trays/<id>/`.
+Without it, the panel quietly hides — the rest of the plugin is
+unaffected.
+
+No `PLUGINS_CONFIG` changes are needed.
+
+### Why not netbox-qrcode?
+
+[`netbox-qrcode`](https://github.com/netbox-community/netbox-qrcode)
+is the established plugin for QR codes on NetBox core models
+(`dcim.device`, `dcim.cable`, etc.) and ships a rich label-design
+system for print workflows. We considered wrapping it but its
+template extensions hardcode the supported model list at the class
+level, so plugin models like `netbox_osp.spliceclosure` can't be
+added via configuration alone. Rather than fork or monkey-patch
+upstream, we use the same underlying `qrcode` Python library
+directly — same QR codes, no upstream coupling, ~50 LOC.
+
+If you also use netbox-qrcode for `dcim.device` / `dcim.cable` /
+etc. labels, both plugins coexist cleanly: netbox-qrcode owns its
+models, `netbox-osp` owns ours.
+
+### Verify the integration
+
+1. Install the extra: `pip install netbox-osp[qrcode]` (in the
+   NetBox virtualenv or container)
+2. Restart NetBox and the RQ workers
+3. Browse to any `SpliceClosure` detail page — e.g.
+   `/plugins/osp/closures/<id>/`
+4. The right-page area should show a **Field QR code** card with
+   the SVG QR and the encoded URL below
+5. Open your phone's camera, point it at the QR, confirm it opens
+   the same detail page
+
+If the QR card doesn't appear, check that `qrcode` is importable in
+the NetBox Python environment (`python -c "import qrcode"`).

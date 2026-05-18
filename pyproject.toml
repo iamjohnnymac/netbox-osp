@@ -31,6 +31,7 @@ dependencies = []
 test = [
     "coverage>=7.6",
     "tblib>=3.0",
+    "qrcode>=7.0",
 ]
 docs = [
     "mkdocs-material>=9.5",
@@ -39,6 +40,12 @@ docs = [
 ]
 attachments = [
     "netbox-attachments>=11.2.0",
+]
+qrcode = [
+    "qrcode>=7.0",
+]
+ecosystem = [
+    "netbox-osp[attachments,qrcode]",
 ]
 
 [project.urls]

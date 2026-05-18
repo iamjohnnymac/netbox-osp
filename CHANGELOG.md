@@ -11,6 +11,19 @@ Per-release NetBox / Python compatibility lives in
 
 ### Added
 
+- **Field QR codes on `SpliceClosure` and `SpliceTray`** — two new
+  `PluginTemplateExtension` classes (`SpliceClosureQrCode`,
+  `SpliceTrayQrCode`) inject a Field QR code panel into the right-page
+  area of closure / tray detail pages. The QR encodes the absolute
+  URL of the page so a field tech can scan a printed closure label
+  and land on the splice plan with attached photos. Uses the
+  `qrcode` Python library's pure-Python SVG factory (no Pillow
+  dependency). Install with `pip install netbox-osp[qrcode]`. The
+  panel quietly hides on installs without the extra so the base
+  install isn't affected. No `PLUGINS_CONFIG` changes required. See
+  `docs/integrations.md` for rationale on why we use `qrcode`
+  directly rather than wrapping `netbox-qrcode` (which hardcodes its
+  supported model list at the class level).
 - **netbox-attachments integration** — documented `scope_filter`
   configuration for [netbox-attachments](https://github.com/Kani999/netbox-attachments)
   covering all 10 OSP models (`OspCable`, `Tube`, `Strand`, `Splice`,
