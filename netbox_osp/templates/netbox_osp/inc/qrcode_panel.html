@@ -1,0 +1,16 @@
+{# Field QR code panel — encodes the page's absolute URL. #}
+{# Rendered when the `qrcode` Python library is installed (see netbox-osp[qrcode] extra). #}
+<div class="card mb-3">
+  <h5 class="card-header">Field QR code</h5>
+  <div class="card-body text-center">
+    <div class="qr-image mb-3 mx-auto" style="max-width: 240px;">
+      {{ qr_svg|safe }}
+    </div>
+    <div class="text-muted small text-break">
+      <code>{{ absolute_url }}</code>
+    </div>
+    <div class="text-muted small mt-2">
+      Scan this code from a printed label to open this page on a phone.
+    </div>
+  </div>
+</div>

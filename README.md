@@ -203,8 +203,12 @@ Each integration below is **optional** — the plugin runs fine without any of t
 
 - **[netbox-attachments](https://github.com/Kani999/netbox-attachments)** — attach OTDR
   `.sor` traces, splice photos, as-built drawings, and acceptance certificates to any
-  OSP model. Install with `pip install netbox-osp[attachments] netbox-attachments` and
-  add a `scope_filter` block to `PLUGINS_CONFIG`.
+  OSP model. Install with `pip install netbox-osp[attachments]` and add a `scope_filter`
+  block to `PLUGINS_CONFIG`.
+- **Field QR codes** — built-in QR panel on `SpliceClosure` and `SpliceTray` detail
+  pages encoding the absolute URL. Field crews scan from a printed closure label and
+  land on the splice plan with attached photos. Install with `pip install
+  netbox-osp[qrcode]`; no `PLUGINS_CONFIG` changes needed.
 
 See [docs/integrations.md](docs/integrations.md) for the full configuration snippets,
 use-case matrix, and verification steps.
