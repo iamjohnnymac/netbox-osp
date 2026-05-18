@@ -82,6 +82,7 @@
 {% block javascript %}
     {{ block.super }}
     <script src="{% static 'netbox_osp/js/leaflet.js' %}"></script>
+    <script src="{% static 'netbox_osp/js/base_layers.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const el = document.getElementById('osp-closure-map');
@@ -90,7 +91,11 @@
             const point = ptScript ? JSON.parse(ptScript.textContent) : null;
             const tileUrl = el.dataset.tileUrl.replace('/0/0/0.png', '/{z}/{x}/{y}.png');
             const map = L.map(el, { attributionControl: false, maxZoom: 18 });
-            L.tileLayer(tileUrl, { maxNativeZoom: 16, maxZoom: 18 }).addTo(map);
+            // Hook the shared base-layer manager: starts on the preferred
+            // online layer, auto-falls back to the bundled MBTiles after 3
+            // tileerrors in 5s. No dropdown on this small map — passing
+            // null skips the UI render.
+            window.OspBaseLayers.attach(map, null, tileUrl);
             if (point && point.coordinates) {
                 const latlng = [point.coordinates[1], point.coordinates[0]];
                 L.marker(latlng).bindPopup(el.dataset.name).addTo(map);
