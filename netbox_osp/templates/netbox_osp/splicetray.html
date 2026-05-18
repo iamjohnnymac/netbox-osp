@@ -1,5 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% load plugins %}
 {% load render_table from django_tables2 %}
 
 {% block content %}
@@ -14,9 +15,11 @@
                 <tr><th>Used</th><td>{{ object.used }}</td></tr>
             </table>
         </div>
+        {% plugin_left_page object %}
     </div>
     <div class="col col-md-6">
         {% include 'inc/panels/tags.html' %}
+        {% plugin_right_page object %}
     </div>
 </div>
 <div class="row mt-3">
@@ -25,6 +28,11 @@
             <h5 class="card-header">Splices</h5>
             {% render_table splice_table 'inc/table.html' %}
         </div>
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        {% plugin_full_width_page object %}
     </div>
 </div>
 {% endblock %}
