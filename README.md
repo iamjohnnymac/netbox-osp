@@ -13,6 +13,7 @@ and an offline-capable plant map.**
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Tests](https://github.com/iamjohnnymac/netbox-osp/actions/workflows/test.yml/badge.svg)](https://github.com/iamjohnnymac/netbox-osp/actions/workflows/test.yml)
 [![Docs](https://img.shields.io/badge/docs-mkdocs--material-blue)](https://iamjohnnymac.github.io/netbox-osp/)
+[![Demo walkthrough](https://img.shields.io/badge/demo-walkthrough-purple)](https://iamjohnnymac.github.io/netbox-osp/demo/)
 
 </div>
 

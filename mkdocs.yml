@@ -78,6 +78,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Demo walkthrough: demo.md
   - Install: install.md
   - Configure: configure.md
   - Data model: data-model.md

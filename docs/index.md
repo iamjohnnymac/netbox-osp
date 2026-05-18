@@ -12,6 +12,7 @@ Outside-plant (OSP) fibre management for [NetBox](https://github.com/netbox-comm
 
 ## Quick links
 
+- [Demo walkthrough](demo.md) — 8-step tour of the plugin running on the live demo
 - [Install](install.md)
 - [Configure](configure.md)
 - [Data model](data-model.md)
