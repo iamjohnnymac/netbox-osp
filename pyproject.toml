@@ -37,6 +37,9 @@ docs = [
     "mkdocs-mermaid2-plugin>=1.2",
     "mkdocs-git-revision-date-localized-plugin>=1.2",
 ]
+attachments = [
+    "netbox-attachments>=11.2.0",
+]
 
 [project.urls]
 Homepage      = "https://github.com/iamjohnnymac/netbox-osp"

@@ -9,6 +9,20 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+### Added
+
+- **netbox-attachments integration** — documented `scope_filter`
+  configuration for [netbox-attachments](https://github.com/Kani999/netbox-attachments)
+  covering all 10 OSP models (`OspCable`, `Tube`, `Strand`, `Splice`,
+  `SpliceClosure`, `SpliceTray`, `FibreLink`, `FibreTrunk`,
+  `TrunkBreakout`, `LocationGeo`). Operators can now attach OTDR
+  `.sor` traces, splice photos, as-built PDFs, and acceptance-test
+  certificates to any OSP record. Install with `pip install
+  netbox-osp[attachments] netbox-attachments`. Zero plugin code — pure
+  composition via the upstream `scope_filter` setting. See
+  `docs/integrations.md`. Sets up the file-storage layer that the
+  upcoming v0.3.5 OTDR moat work will read `.sor` files from.
+
 ## [0.2.2] — 2026-05-18
 
 ### Docs

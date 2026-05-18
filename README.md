@@ -196,6 +196,19 @@ PLUGINS_CONFIG = {
 See [docs/configure.md](docs/configure.md) for deeper docs on plant-boundary validation,
 per-Location GPS markers, and GraphQL.
 
+## Ecosystem integrations
+
+`netbox-osp` composes with the wider NetBox plugin ecosystem rather than reinventing it.
+Each integration below is **optional** — the plugin runs fine without any of them.
+
+- **[netbox-attachments](https://github.com/Kani999/netbox-attachments)** — attach OTDR
+  `.sor` traces, splice photos, as-built drawings, and acceptance certificates to any
+  OSP model. Install with `pip install netbox-osp[attachments] netbox-attachments` and
+  add a `scope_filter` block to `PLUGINS_CONFIG`.
+
+See [docs/integrations.md](docs/integrations.md) for the full configuration snippets,
+use-case matrix, and verification steps.
+
 ## Data model
 
 All geometry is stored as GeoJSON in WGS84 with `[lon, lat]` order (RFC 7946). Conversion
