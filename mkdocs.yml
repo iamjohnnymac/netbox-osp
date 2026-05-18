@@ -81,6 +81,7 @@ nav:
   - Demo walkthrough: demo.md
   - Install: install.md
   - Configure: configure.md
+  - Integrations: integrations.md
   - Data model: data-model.md
   - Core tracer: core-tracer.md
   - Tile bundling: tile-bundling.md
