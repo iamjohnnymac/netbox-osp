@@ -261,12 +261,12 @@
     background: var(--nbx-color-surface, #1f2330);
     border: 2px solid #6c757d;
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 10px 12px;
     color: #eeeeee;
     font-family: inherit;
-    font-size: 12px;
-    min-width: 120px;
-    max-width: 240px;
+    font-size: 13px;
+    min-width: 160px;
+    max-width: 280px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     cursor: pointer;
 }
@@ -278,7 +278,7 @@
 .osp-tracer-node__kind {
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.05em;
 }
 
@@ -292,9 +292,34 @@
 .osp-tracer-node__meta {
     margin-top: 4px;
     color: #9aa0a6;
-    font-size: 11px;
+    font-size: 12px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono",
                  "Roboto Mono", Consolas, monospace;
+}
+
+/* ---- TIA-598 strand colour badges ------------------------------------- */
+/* Strand colour codes are FUNCTIONAL information (operators identify a
+   strand by its position colour). NetBox's default badge palette
+   desaturates "blue" on the dark theme to near-grey, and "black" / "white"
+   render with poor contrast. Override the three problem cases with
+   explicit accessible values so a Blue strand looks blue at a glance.
+   These overrides intentionally apply globally — boosting blue/black/white
+   badges is a net improvement across NetBox. */
+.badge.text-bg-blue {
+    background-color: #1976d2 !important;
+    color: #ffffff !important;
+}
+
+.badge.text-bg-black {
+    background-color: #1a1a1a !important;
+    color: #f5f5f5 !important;
+    border: 1px solid #666666 !important;
+}
+
+.badge.text-bg-white {
+    background-color: #f5f5f5 !important;
+    color: #1a1a1a !important;
+    border: 1px solid #999999 !important;
 }
 
 /* Summary band — sits above the graph card. */
