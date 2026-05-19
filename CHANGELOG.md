@@ -9,6 +9,22 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-05-19
+
+### Fixed
+
+- **FibreLink loss-budget gauge is now readable on dark theme.** The
+  prior gauge inlined the numeric readout inside the SVG at
+  `font-size: 5.5` viewBox units with a near-black fill
+  (`#1a1a1a`) — effectively invisible on NetBox's dark theme. The
+  numbers are now rendered as a bold `<strong>` outside the SVG,
+  the percent appears as a coloured Bootstrap badge
+  (`text-bg-success` / `warning` / `danger` matching the band),
+  and the SVG is now a pure visual bar (~18px tall, full container
+  width) with no text. A short legend underneath explains the
+  thresholds. Long-standing UX bug spotted during the v0.3.x
+  walkthrough.
+
 ## [0.3.2] — 2026-05-18
 
 ### Fixed
@@ -352,7 +368,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.3
 [0.3.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.2
 [0.3.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.0
