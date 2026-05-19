@@ -1,5 +1,6 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% load plugins %}
 {% load static %}
 
 {% block head %}
@@ -16,13 +17,14 @@
                 <tr><th>Cable</th><td>{{ object.cable|linkify }}</td></tr>
                 <tr><th>Tube</th><td>{{ object.tube|linkify|default:"&mdash;" }}</td></tr>
                 <tr><th>Position</th><td>{{ object.position }}</td></tr>
-                <tr><th>Colour</th><td>{% badge object.get_color_display %}</td></tr>
+                <tr><th>Colour</th><td>{% badge object.get_color_display bg_color=object.get_color_color %}</td></tr>
                 <tr><th>Status</th><td>{% badge object.get_status_display bg_color=object.get_status_color %}</td></tr>
                 <tr><th>Loss (dB)</th><td>{{ object.loss_db|floatformat:3 }}</td></tr>
             </table>
         </div>
         {# PR E — visual core tracer entry point #}
         {% include 'netbox_osp/inc/trace_button.html' %}
+        {% plugin_left_page object %}
     </div>
     <div class="col col-md-6">
         <div class="card">
@@ -41,6 +43,12 @@
             </div>
         </div>
         {% include 'inc/panels/tags.html' %}
+        {% plugin_right_page object %}
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col">
+        {% plugin_full_width_page object %}
     </div>
 </div>
 {% endblock %}

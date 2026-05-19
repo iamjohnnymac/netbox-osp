@@ -9,6 +9,31 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.7] — 2026-05-19
+
+Three audit fixes bundled together.
+
+### Fixed
+
+- **Brown strand colour badges now render in actual brown.** TIA-598
+  position 4 is Brown; NetBox doesn't ship `text-bg-brown` in its
+  badge palette so the class fell through to a near-black default.
+  Added an explicit CSS override (`#8b4513` saddle brown) so a Brown
+  strand looks brown on the strand list, tube list, and detail pages.
+- **Strand detail page Colour badge now uses the helper.** The
+  `strand.html` template called `{% badge object.get_color_display %}`
+  without `bg_color`, so even though v0.3.5 added the
+  `get_color_color()` helper, the detail page kept rendering Colour
+  as grey. Now passes `bg_color=object.get_color_color` and matches
+  the list-view colour fidelity.
+- **`strand.html` and `trunkbreakout.html` now render plugin
+  template-extension slots.** v0.3.1 wired
+  `{% plugin_left_page %}` / `{% plugin_right_page %}` /
+  `{% plugin_full_width_page %}` into the other custom OSP detail
+  templates, but the strand and trunkbreakout templates were missed.
+  Attachments, Documents, and any other plugin's per-object cards
+  are now visible on these two pages.
+
 ## [0.3.5] — 2026-05-19
 
 ### Fixed
@@ -401,7 +426,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.7...HEAD
+[0.3.7]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.7
 [0.3.5]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.5
 [0.3.4]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.4
 [0.3.3]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.3

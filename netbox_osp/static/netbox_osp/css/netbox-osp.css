@@ -322,6 +322,16 @@
     border: 1px solid #999999 !important;
 }
 
+/* "brown" isn't in NetBox's badge palette (azure/black/blue/cyan/gray/
+   green/indigo/lime/orange/pink/purple/red/teal/white/yellow). Without
+   this override the .badge.text-bg-brown class falls through to the
+   default dark surface and is unreadable. TIA-598 position 4 is Brown;
+   we want it to render saddle-brown like a real fibre. */
+.badge.text-bg-brown {
+    background-color: #8b4513 !important;
+    color: #ffffff !important;
+}
+
 /* Summary band — sits above the graph card. */
 .osp-tracer-summary {
     display: flex;
