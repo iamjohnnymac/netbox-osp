@@ -9,6 +9,25 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-05-19
+
+### Fixed
+
+- **TIA-598 strand colour badges now legible on dark theme.** NetBox's
+  default palette desaturated `blue` to near-grey, `black` was
+  invisible, and `white` rendered with poor contrast. Added explicit
+  CSS overrides for `.badge.text-bg-blue` (vivid `#1976d2`),
+  `.badge.text-bg-black` (`#1a1a1a` + light text + outline), and
+  `.badge.text-bg-white` (light bg + dark text + outline). Strand
+  colour codes are functional information — operators identify a
+  fibre by its position colour — so badge fidelity matters.
+  Overrides intentionally apply globally; boosting these three is a
+  net improvement across all NetBox badges.
+- **Core tracer hop nodes are easier to read.** Bumped
+  `.osp-tracer-node` `min-width` from 120 → 160 px, `font-size`
+  12 → 13 px, and increased the kind / meta sub-font sizes for
+  better legibility at typical viewport widths.
+
 ## [0.3.3] — 2026-05-19
 
 ### Fixed
@@ -368,7 +387,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.4
 [0.3.3]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.3
 [0.3.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.2
 [0.3.1]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.1
