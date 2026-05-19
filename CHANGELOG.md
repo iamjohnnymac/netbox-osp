@@ -9,6 +9,17 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.6] — 2026-05-19
+
+### Fixed
+
+- **Brown strand colour badges now render in actual brown.** TIA-598
+  position 4 is Brown; NetBox doesn't ship `text-bg-brown` in its
+  badge palette so the class fell through to a near-black default.
+  Added an explicit CSS override (`#8b4513` saddle brown) so a Brown
+  strand looks brown on the strand list, tube list, and detail pages.
+  Spotted during the v0.3.5 visual audit on CT 109.
+
 ## [0.3.5] — 2026-05-19
 
 ### Fixed
@@ -401,7 +412,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.6
 [0.3.5]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.5
 [0.3.4]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.4
 [0.3.3]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.3
