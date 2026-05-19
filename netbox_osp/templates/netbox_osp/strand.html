@@ -22,10 +22,13 @@
                 <tr><th>Loss (dB)</th><td>{{ object.loss_db|floatformat:3 }}</td></tr>
             </table>
         </div>
-        {# The "Trace this core" button is rendered via the StrandTraceButton
-           PluginTemplateExtension into {% plugin_right_page %} below — the
-           pre-v0.3.1 inline include was removed in v0.3.8 to avoid drawing
-           the button twice once the plugin slots were wired. #}
+        {% comment %}
+            The "Trace this core" button is rendered via the
+            StrandTraceButton PluginTemplateExtension into the
+            plugin_right_page slot below. The pre-v0.3.1 inline
+            include was removed in v0.3.8 to avoid drawing the button
+            twice once the plugin slots were wired.
+        {% endcomment %}
         {% plugin_left_page object %}
     </div>
     <div class="col col-md-6">
