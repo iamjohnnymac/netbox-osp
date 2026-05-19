@@ -22,8 +22,10 @@
                 <tr><th>Loss (dB)</th><td>{{ object.loss_db|floatformat:3 }}</td></tr>
             </table>
         </div>
-        {# PR E — visual core tracer entry point #}
-        {% include 'netbox_osp/inc/trace_button.html' %}
+        {# The "Trace this core" button is rendered via the StrandTraceButton
+           PluginTemplateExtension into {% plugin_right_page %} below — the
+           pre-v0.3.1 inline include was removed in v0.3.8 to avoid drawing
+           the button twice once the plugin slots were wired. #}
         {% plugin_left_page object %}
     </div>
     <div class="col col-md-6">
