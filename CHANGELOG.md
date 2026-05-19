@@ -9,6 +9,18 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.8] — 2026-05-19
+
+### Fixed
+
+- **"Trace this core" button no longer appears twice on the Strand
+  detail page.** v0.3.7 wired the `plugin_right_page` slot into
+  `strand.html`, which made the `StrandTraceButton`
+  `PluginTemplateExtension` fire — but the template also kept the
+  pre-v0.3.1 inline `{% include 'netbox_osp/inc/trace_button.html' %}`
+  workaround, so the button rendered twice. Removed the inline
+  include; the extension is now the single source of truth.
+
 ## [0.3.7] — 2026-05-19
 
 Three audit fixes bundled together.
@@ -426,7 +438,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.7...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.8...HEAD
+[0.3.8]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.8
 [0.3.7]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.7
 [0.3.5]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.5
 [0.3.4]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.4

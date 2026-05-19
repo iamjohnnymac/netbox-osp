@@ -110,9 +110,9 @@ class FrontPortTraceButton(_TraceButtonMixin, PluginTemplateExtension):
 class StrandTraceButton(_TraceButtonMixin, PluginTemplateExtension):
     """Inject the trace button onto netbox-osp Strand detail pages.
 
-    Some installs disable template extensions on plugin pages — for
-    those, the strand.html template embeds the button directly via
-    {% include %}. This extension covers the standard case.
+    Since v0.3.1 wired plugin_right_page into strand.html this extension
+    is the only path; the pre-v0.3.1 inline {% include %} workaround was
+    removed in v0.3.8 to avoid drawing the button twice.
     """
     models = ["netbox_osp.strand"]
     _trace_url_view_name = "plugins:netbox_osp:strand_trace"
