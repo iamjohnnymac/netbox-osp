@@ -9,6 +9,20 @@ Per-release NetBox / Python compatibility lives in
 
 ## [Unreleased]
 
+## [0.3.5] — 2026-05-19
+
+### Fixed
+
+- **TIA-598 strand colour badges now actually use their named colour.**
+  v0.3.4 added CSS overrides for `text-bg-blue` / `text-bg-black` /
+  `text-bg-white` — but they had no effect because NetBox's
+  `ChoiceFieldColumn` was rendering every TIA-598 colour as
+  `text-bg-secondary` (grey). Root cause: neither `Strand` nor `Tube`
+  defined a `get_color_color()` method, so the column couldn't look
+  up the badge colour from `TIA598ColorChoices`. Added the helper on
+  both models — colour codes now render in their actual colour
+  (Blue is blue, Orange is orange, Brown is brown, etc.).
+
 ## [0.3.4] — 2026-05-19
 
 ### Fixed
@@ -387,7 +401,8 @@ GPS markers.
 
 - PyPI name-reservation placeholder. Not functional.
 
-[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/iamjohnnymac/netbox-osp/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.5
 [0.3.4]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.4
 [0.3.3]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.3
 [0.3.2]: https://github.com/iamjohnnymac/netbox-osp/releases/tag/v0.3.2
