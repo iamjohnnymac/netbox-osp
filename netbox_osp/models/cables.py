@@ -179,6 +179,12 @@ class Tube(NetBoxModel):
     def get_absolute_url(self):
         return reverse("plugins:netbox_osp:tube", args=[self.pk])
 
+    def get_color_color(self):
+        """NetBox's ChoiceFieldColumn looks up the badge colour by calling
+        get_<field>_color() on the model. Without this, the colour column
+        renders every value as `text-bg-secondary` (grey)."""
+        return TIA598ColorChoices.colors.get(self.color)
+
     def save(self, *args, **kwargs):
         if not self.color:
             self.color = TIA598ColorChoices.for_position(self.number or 1)
@@ -237,6 +243,12 @@ class Strand(NetBoxModel):
 
     def get_status_color(self):
         return StrandStatusChoices.colors.get(self.status)
+
+    def get_color_color(self):
+        """ChoiceFieldColumn / badge template tag both look up the badge
+        colour by calling get_<field>_color() on the model. Without this,
+        the strand colour code renders as `text-bg-secondary` (grey)."""
+        return TIA598ColorChoices.colors.get(self.color)
 
     def save(self, *args, **kwargs):
         if not self.color:
